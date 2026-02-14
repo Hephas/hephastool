@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熱值計算公式 | Heat Value Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #d35400; /* 使用燃燒橘色 */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --table-border: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 1000px; /* 寬度加寬以容納詳細表格 */
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 { margin: 0; color: var(--primary-color); }
+        .header p { color: #666; font-size: 0.9rem; }
+
+        /* 設定區塊 */
+        .config-section {
+            background-color: #fff8e1;
+            border: 1px solid #ffe0b2;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .config-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .config-label {
+            font-weight: bold;
+            color: #e67e22;
+            min-width: 100px;
+        }
+
+        .radio-group label, .checkbox-group label {
+            margin-right: 15px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        /* 輸入區塊 */
+        .input-section {
+            background-color: #fff;
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .input-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .input-table th { text-align: left; padding: 8px; color: #555; font-size: 0.9rem; }
+        .input-table td { padding: 8px; }
+        .input-table input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            border-top: 2px solid #eee;
+            padding-top: 10px;
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-calc:hover { background-color: #a04000; }
+
+        /* 結果表格 */
+        .result-section {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+
+        .result-table th, .result-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        .result-table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* 區分 LHV 與 HHV 的顏色 */
+        .th-lhv { background-color: #2980b9 !important; }
+        .th-hhv { background-color: #c0392b !important; }
+        
+        .td-lhv { color: #2980b9; font-weight: bold; }
+        .td-hhv { color: #c0392b; font-weight: bold; }
+
+        .summary-box {
+            background-color: #fcf3cf;
+            border-left: 5px solid #f1c40f;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--accent-color); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 768px) {
+            .result-table { font-size: 0.8rem; }
+            .result-section { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 3rem; color: #d35400; margin-bottom: 10px;">
+                <i class="fa-solid fa-fire-burner"></i>
+            </div>
+            <h2>熱值計算公式</h2>
+            <p>Fuel Gas Heating Value Calculator (LHV & HHV)</p>
+        </div>
+
+        <div class="config-section">
+            <div class="config-row">
+                <div class="config-label">1. 計算模式：</div>
+                <div class="radio-group">
+                    <label><input type="radio" name="calcMode" value="percent" checked onchange="renderInputs()"> 輸入百分比 (%)</label>
+                    <label><input type="radio" name="calcMode" value="flow" onchange="renderInputs()"> 輸入個別流量</label>
+                </div>
+            </div>
+
+            <div class="config-row">
+                <div class="config-label">2. 流量單位：</div>
+                <div class="radio-group">
+                    <label><input type="radio" name="flowUnit" value="lmin" checked onchange="updateUnitLabels()"> L/min</label>
+                    <label><input type="radio" name="flowUnit" value="nm3" onchange="updateUnitLabels()"> Nm³/hr</label>
+                </div>
+            </div>
+
+            <div class="config-row">
+                <div class="config-label">3. 氣體成份：</div>
+                <div class="checkbox-group" id="gasCheckboxes">
+                    </div>
+            </div>
+        </div>
+
+        <div class="input-section" id="inputContainer">
+            <div id="totalFlowWrapper" style="margin-bottom: 15px;">
+                <label style="font-weight:bold;">總氣體流量 (<span class="unit-label">L/min</span>)：</label>
+                <input type="number" id="totalFlowInput" placeholder="請輸入總流量" style="width: 150px; padding: 5px;">
+            </div>
+            
+            <table class="input-table">
+                <thead>
+                    <tr>
+                        <th>氣體名稱</th>
+                        <th id="inputHeaderCol">體積百分比 (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="inputTableBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <button class="btn-calc" onclick="calculateHeatValue()">開始計算</button>
+
+        <div id="results" class="result-section">
+            
+            <div class="section-title" style="font-weight:bold; margin-bottom:10px; font-size:1.2rem;">
+                <i class="fa-solid fa-chart-pie"></i> 混合燃氣總熱值 (System Summary)
+            </div>
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th class="th-lhv">LHV (低熱值) 結果</th>
+                        <th class="th-hhv">HHV (高熱值) 結果</th>
+                        <th>單位</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>單位體積熱值</td>
+                        <td id="resUnitLHV" class="td-lhv">--</td>
+                        <td id="resUnitHHV" class="td-hhv">--</td>
+                        <td>kcal/Nm³</td>
+                    </tr>
+                    <tr>
+                        <td>單位體積能量 <span style="font-size:0.8rem; color:red;">(New)</span></td>
+                        <td id="resKwhLHV" class="td-lhv">--</td>
+                        <td id="resKwhHHV" class="td-hhv">--</td>
+                        <td>kWh/Nm³</td>
+                    </tr>
+                    <tr>
+                        <td>系統每小時總熱能</td>
+                        <td id="resTotalLHV" class="td-lhv">--</td>
+                        <td id="resTotalHHV" class="td-hhv">--</td>
+                        <td>kcal/hr</td>
+                    </tr>
+                    <tr>
+                        <td>系統總功率當量</td>
+                        <td id="resPowerLHV" class="td-lhv">--</td>
+                        <td id="resPowerHHV" class="td-hhv">--</td>
+                        <td>kW</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="margin-top:20px; font-weight:bold; margin-bottom:10px;">
+                <i class="fa-solid fa-list"></i> 詳細組成分析 (Composition Details)
+            </div>
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>氣體名稱</th>
+                        <th>體積佔比 (%)</th>
+                        <th>換算流量 (Nm³/hr)</th>
+                        <th class="th-lhv">LHV (kcal/Nm³)</th>
+                        <th class="th-hhv">HHV (kcal/Nm³)</th>
+                    </tr>
+                </thead>
+                <tbody id="detailTableBody">
+                    </tbody>
+                <tfoot>
+                    <tr style="background-color: #eee; font-weight:bold;">
+                        <td>總計 (Total)</td>
+                        <td id="sumPercent">100%</td>
+                        <td id="sumFlowNm3">--</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+        </div>
+
+        <a href="index.html" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> 回到工具箱首頁
+        </a>
+    </div>
+
+    <script>
+        // --- 1. 定義氣體資料庫 (kcal/Nm3) ---
+        // 依據使用者要求順序: H2, CH4, CO, CO2, N2, C2H6, C3H8
+        const gasDB = [
+            { id: 'H2',   name: '氫氣 (H₂)',      lhv: 2579,  hhv: 3052 },
+            { id: 'CH4',  name: '甲烷 (CH₄)',     lhv: 8555,  hhv: 9515 },
+            { id: 'CO',   name: '一氧化碳 (CO)',   lhv: 3018,  hhv: 3018 },
+            { id: 'CO2',  name: '二氧化碳 (CO₂)',  lhv: 0,     hhv: 0 },
+            { id: 'N2',   name: '氮氣 (N₂)',      lhv: 0,     hhv: 0 },
+            { id: 'C2H6', name: '乙烷 (C₂H₆)',    lhv: 15228, hhv: 16654 },
+            { id: 'C3H8', name: '丙烷 (C₃H₈)',    lhv: 21795, hhv: 23682 }
+        ];
+
+        // --- 2. 初始化畫面 ---
+        function init() {
+            const container = document.getElementById('gasCheckboxes');
+            gasDB.forEach((gas, index) => {
+                const label = document.createElement('label');
+                // 預設全部勾選方便測試，也可以預設不勾
+                const checked = true; 
+                label.innerHTML = `<input type="checkbox" value="${index}" ${checked ? 'checked' : ''} onchange="renderInputs()"> ${gas.name}`;
+                container.appendChild(label);
+            });
+            renderInputs();
+        }
+
+        // --- 3. 渲染輸入欄位 ---
+        function renderInputs() {
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+            const unitType = document.querySelector('input[name="flowUnit"]:checked').value;
+            const unitLabel = unitType === 'lmin' ? 'L/min' : 'Nm³/hr';
+            
+            // 處理總流量輸入框顯示
+            const totalFlowWrapper = document.getElementById('totalFlowWrapper');
+            if (mode === 'percent') {
+                totalFlowWrapper.style.display = 'block';
+                document.querySelector('.unit-label').innerText = unitLabel;
+            } else {
+                totalFlowWrapper.style.display = 'none';
+            }
+
+            // 處理表格標頭
+            const headerCol = document.getElementById('inputHeaderCol');
+            headerCol.innerText = mode === 'percent' ? '體積百分比 (%)' : `個別流量 (${unitLabel})`;
+
+            // 處理表格內容
+            const tbody = document.getElementById('inputTableBody');
+            tbody.innerHTML = '';
+
+            const checkboxes = document.querySelectorAll('#gasCheckboxes input[type="checkbox"]');
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const gasIndex = cb.value;
+                    const gas = gasDB[gasIndex];
+                    const tr = document.createElement('tr');
+                    
+                    // 輸入框 ID 格式: input_GASID
+                    tr.innerHTML = `
+                        <td>${gas.name}</td>
+                        <td>
+                            <input type="number" id="input_${gas.id}" placeholder="${mode === 'percent' ? '0-100' : '輸入流量'}" step="0.1">
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        // 更新單位標籤文字
+        function updateUnitLabels() {
+            renderInputs(); // 簡單重繪即可
+        }
+
+        // --- 4. 核心計算邏輯 ---
+        function calculateHeatValue() {
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+            const unitType = document.querySelector('input[name="flowUnit"]:checked').value;
+            
+            // 取得被勾選的氣體
+            const checkedBoxes = document.querySelectorAll('#gasCheckboxes input[type="checkbox"]:checked');
+            if (checkedBoxes.length === 0) {
+                alert("請至少選擇一種氣體！");
+                return;
+            }
+
+            let gasList = [];
+            let totalInput = 0;
+            let isValid = true;
+
+            // 蒐集資料
+            checkedBoxes.forEach(cb => {
+                const idx = cb.value;
+                const gas = gasDB[idx];
+                const inputVal = parseFloat(document.getElementById(`input_${gas.id}`).value);
+                
+                if (isNaN(inputVal) || inputVal < 0) {
+                    isValid = false;
+                }
+
+                gasList.push({
+                    ...gas, // 複製氣體屬性
+                    val: isNaN(inputVal) ? 0 : inputVal
+                });
+                totalInput += (isNaN(inputVal) ? 0 : inputVal);
+            });
+
+            if (!isValid) {
+                alert("請確認所有欄位皆已填寫正確數值！");
+                return;
+            }
+
+            // --- 模式分支處理 ---
+            let totalFlow_Nm3 = 0;
+            let flowUnitFactor = (unitType === 'lmin') ? 0.06 : 1.0; // 轉換係數
+
+            if (mode === 'percent') {
+                // A. 百分比模式 (嚴格檢查)
+                if (Math.abs(totalInput - 100) > 0.1) {
+                    alert(`錯誤：百分比加總必須為 100%！\n目前的加總為：${totalInput.toFixed(2)}%`);
+                    return;
+                }
+
+                const totalFlowInput = parseFloat(document.getElementById('totalFlowInput').value);
+                if (isNaN(totalFlowInput) || totalFlowInput <= 0) {
+                    alert("請輸入有效的總氣體流量！");
+                    return;
+                }
+
+                // 計算個別 Nm3 流量
+                // 流量(Nm3) = 總輸入 * 單位係數 * (百分比/100)
+                totalFlow_Nm3 = totalFlowInput * flowUnitFactor;
+                
+                gasList.forEach(g => {
+                    g.percent = g.val;
+                    g.flowNm3 = totalFlow_Nm3 * (g.val / 100);
+                });
+
+            } else {
+                // B. 個別流量模式
+                if (totalInput === 0) {
+                    alert("總流量不能為 0！");
+                    return;
+                }
+
+                // 計算總流量 (Nm3)
+                totalFlow_Nm3 = totalInput * flowUnitFactor;
+
+                // 反推百分比
+                gasList.forEach(g => {
+                    const thisFlowNm3 = g.val * flowUnitFactor;
+                    g.flowNm3 = thisFlowNm3;
+                    g.percent = (thisFlowNm3 / totalFlow_Nm3) * 100;
+                });
+            }
+
+            // --- 熱值計算 ---
+            let totalLHV_kcal = 0; // kcal/hr
+            let totalHHV_kcal = 0; // kcal/hr
+
+            gasList.forEach(g => {
+                // 該氣體的貢獻熱值 = 流量(Nm3/hr) * 單位熱值(kcal/Nm3)
+                totalLHV_kcal += g.flowNm3 * g.lhv;
+                totalHHV_kcal += g.flowNm3 * g.hhv;
+            });
+
+            // 平均單位熱值 (kcal/Nm3)
+            const unitLHV = totalLHV_kcal / totalFlow_Nm3;
+            const unitHHV = totalHHV_kcal / totalFlow_Nm3;
+
+            // 單位能量密度 (kWh/Nm3) -> 1 kcal = 1/860 kWh
+            const kwhLHV = unitLHV / 860;
+            const kwhHHV = unitHHV / 860;
+
+            // 總功率 (kW) -> kcal/hr / 860
+            const powerLHV = totalLHV_kcal / 860;
+            const powerHHV = totalHHV_kcal / 860;
+
+
+            // --- 渲染結果 ---
+            const fmt = (n) => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const fmtL = (n) => n.toLocaleString('en-US', {maximumFractionDigits: 0});
+
+            // 1. 總結表
+            document.getElementById('resUnitLHV').innerText = fmt(unitLHV);
+            document.getElementById('resUnitHHV').innerText = fmt(unitHHV);
+            
+            document.getElementById('resKwhLHV').innerText = fmt(kwhLHV);
+            document.getElementById('resKwhHHV').innerText = fmt(kwhHHV);
+
+            document.getElementById('resTotalLHV').innerText = fmtL(totalLHV_kcal);
+            document.getElementById('resTotalHHV').innerText = fmtL(totalHHV_kcal);
+
+            document.getElementById('resPowerLHV').innerText = fmt(powerLHV);
+            document.getElementById('resPowerHHV').innerText = fmt(powerHHV);
+
+            // 2. 詳細表
+            const detailBody = document.getElementById('detailTableBody');
+            detailBody.innerHTML = '';
+            
+            gasList.forEach(g => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${g.name}</td>
+                    <td>${g.percent.toFixed(2)}%</td>
+                    <td>${fmt(g.flowNm3)}</td>
+                    <td>${g.lhv}</td>
+                    <td>${g.hhv}</td>
+                `;
+                detailBody.appendChild(tr);
+            });
+
+            // Footer 總計
+            document.getElementById('sumPercent').innerText = "100.00%";
+            document.getElementById('sumFlowNm3').innerText = fmt(totalFlow_Nm3);
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        // 啟動
+        window.onload = init;
+
+    </script>
+</body>
+</html>
