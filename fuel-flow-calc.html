@@ -473,4 +473,46 @@
 
             // 5. 更新顯示 (Formatter)
             const fmt = (num) => num.toFixed(3); // 流量小數點三位
-            const fmtNm3 = (num) => num.toExponential(3); // Nm3 如果太小可以用科學記號，
+            const fmtNm3 = (num) => num.toExponential(3); // Nm3 如果太小可以用科學記號，這裡暫用小數
+            const fmtStd = (num) => num.toFixed(4); // Nm3 可能很小，顯示4位
+
+            document.getElementById('results').style.display = 'block';
+            
+            // Power
+            document.getElementById('resCurrent').innerText = totalCurrent.toFixed(1);
+            document.getElementById('resCellPower').innerText = cellPower.toFixed(2);
+            document.getElementById('resStackPower').innerText = stackPower.toFixed(3);
+
+            // H2
+            document.getElementById('resH2_Cell_Vol').innerText = fmt(h2_single.display_vol);
+            document.getElementById('resH2_Cell_Nm3').innerText = fmtStd(h2_single.nm3_hr);
+            document.getElementById('resH2_Cell_g').innerText = fmt(h2_single.g_min);
+
+            document.getElementById('resH2_Stack_Vol').innerText = fmt(h2_single.display_vol * cells);
+            document.getElementById('resH2_Stack_Nm3').innerText = fmtStd(h2_single.nm3_hr * cells);
+            document.getElementById('resH2_Stack_g').innerText = fmt(h2_single.g_min * cells);
+
+            // Air
+            document.getElementById('resAir_Cell_Vol').innerText = fmt(air_display_vol);
+            document.getElementById('resAir_Cell_Nm3').innerText = fmtStd(air_nm3_hr);
+            document.getElementById('resAir_Cell_g').innerText = fmt(air_g_min);
+
+            document.getElementById('resAir_Stack_Vol').innerText = fmt(air_display_vol * cells);
+            document.getElementById('resAir_Stack_Nm3').innerText = fmtStd(air_nm3_hr * cells);
+            document.getElementById('resAir_Stack_g').innerText = fmt(air_g_min * cells);
+
+            // O2
+            document.getElementById('resO2_Cell_Vol').innerText = fmt(o2_single.display_vol);
+            document.getElementById('resO2_Cell_Nm3').innerText = fmtStd(o2_single.nm3_hr);
+            document.getElementById('resO2_Cell_g').innerText = fmt(o2_single.g_min);
+
+            document.getElementById('resO2_Stack_Vol').innerText = fmt(o2_single.display_vol * cells);
+            document.getElementById('resO2_Stack_Nm3').innerText = fmtStd(o2_single.nm3_hr * cells);
+            document.getElementById('resO2_Stack_g').innerText = fmt(o2_single.g_min * cells);
+        }
+        
+        // 初始化標題
+        updateTableHeaders();
+    </script>
+</body>
+</html>
