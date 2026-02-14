@@ -292,8 +292,8 @@
             </div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>系統排碳量 (kgCO2/hr)</label>
-                    <input type="number" id="emitSystem" placeholder="例如: 450" step="1">
+                    <label>系統排碳強度 (kgCO2/kWh)</label>
+                    <input type="number" id="emitSystem" placeholder="例如: 0.35" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>市電排碳係數 (kgCO2/kWh)</label>
@@ -440,7 +440,7 @@
             const costLicense = parseFloat(document.getElementById('costLicense').value); // /kW/yr
             const degradation = parseFloat(document.getElementById('degradation').value);
             
-            const emitSystem = parseFloat(document.getElementById('emitSystem').value); // kg/hr
+            const emitSystem = parseFloat(document.getElementById('emitSystem').value); // kg/kWh (已修正)
             const emitGrid = parseFloat(document.getElementById('emitGrid').value); // kg/kWh
             const costCarbon = parseFloat(document.getElementById('costCarbon').value); // NTD/ton
 
@@ -485,8 +485,9 @@
             const lcoe = totalAnnualCost / annualGenElec;
 
             // D. ESG & Carbon
-            // 電力減碳 = (市電排放 * 發電量) - (系統排放 * 時數)
-            const carbonRedElec_kg = (emitGrid * annualGenElec) - (emitSystem * opHours);
+            // 修正計算：電力減碳 = (市電排碳強度 - 系統排碳強度) * 年發電量
+            // 注意：這裡是 kg/kWh 
+            const carbonRedElec_kg = (emitGrid - emitSystem) * annualGenElec;
             
             // 熱能減碳 (替代天然氣鍋爐)
             let carbonRedThermal_kg = 0;
