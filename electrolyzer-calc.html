@@ -229,6 +229,11 @@
                     <label>8. 陽極儲罐溫度 (Tank Temp, °C)</label>
                     <input type="number" id="tempTank" placeholder="參考用，例如: 58" step="0.1">
                 </div>
+                <div class="form-group" style="grid-column: span 2; border-top: 1px dashed #f39c12; padding-top: 15px; margin-top: 5px;">
+                    <label><i class="fa-solid fa-faucet-drip"></i> 去離子水製備效率 (DI Water Efficiency, %)</label>
+                    <input type="number" id="effDI" placeholder="例如: 75 (RO回收率)" value="75" step="1" max="100">
+                    <small style="color:#888;">* 用於計算原水(Raw Water)總消耗量，通常 RO 系統效率約 50-75%</small>
+                </div>
             </div>
         </div>
 
@@ -284,8 +289,10 @@
                         <td id="resEff">-- %</td>
                     </tr>
                     <tr>
+                        <td>單位能耗 (Specific Energy)</td>
+                        <td class="highlight" style="color:#d35400;" id="resSpecificEnergy">-- kWh/Nm³</td>
                         <td>電堆產熱 (Heat Gen.)</td>
-                        <td colspan="3"><span id="resHeatKW" class="highlight">--</span> kW / <span id="resHeatKcal" class="highlight">--</span> kcal/hr</td>
+                        <td><span id="resHeatKW" class="highlight">--</span> kW</td>
                     </tr>
                 </tbody>
             </table>
@@ -373,10 +380,36 @@
                     </tr>
                     <tr>
                         <td>需冰水流量 (Chiller Flow)</td>
-                         <td colspan="3"><span class="highlight" id="resH2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillH2">--</span>°C)</span></td>
+                        <td colspan="3"><span class="highlight" id="resH2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillH2">--</span>°C)</span></td>
                     </tr>
                 </tbody>
             </table>
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="4" style="background-color: #34495e; font-size: 1.1rem;">E. 系統水耗分析 (Water Consumption)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="2" style="vertical-align: middle;">理論反應水消耗<br><span style="font-size:0.8rem; color:#666;">(Stoichiometric)</span></td>
+                        <td class="highlight" id="resWaterTheory_Lmin">-- L/min</td>
+                        <td rowspan="2" style="vertical-align: middle;">原水總消耗量<br><span style="font-size:0.8rem; color:#666;">(Raw Water)</span></td>
+                        <td class="highlight" id="resWaterRaw_Lmin">-- L/min</td>
+                    </tr>
+                    <tr>
+                        <td id="resWaterTheory_Lhr">-- L/hr</td>
+                        <td id="resWaterRaw_Lhr">-- L/hr</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="text-align: left; font-size: 0.9rem; color: #555; background-color: #f1f1f1;">
+                            <i class="fa-solid fa-circle-info"></i> 說明：原水消耗量是基於您設定的 <b><span id="valDiEff">--</span>%</b> 去離子水製備效率推算。
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
         </div>
         
         <a href="index.html" class="back-link">
@@ -397,14 +430,12 @@
         const V_tn = 1.48;         // Thermoneutral Voltage (V)
 
         // Antoine Equation for Water (P in bar, T in Celsius)
-        // P = 10 ^ (A - B / (T + C))
         const Ant_A = 5.40221; 
         const Ant_B = 1838.675;
         const Ant_C = -31.737; 
         
         // Return Saturation Pressure in bar
         function getSatP(tempC) {
-            // NIST parameters for bar
             const A = 5.20389;
             const B = 1733.926;
             const C = 233.665;
@@ -428,8 +459,11 @@
             
             const dpO2 = parseFloat(document.getElementById('dpO2').value);
             const dpH2 = parseFloat(document.getElementById('dpH2').value);
+            
+            // 新增：去離子水效率
+            const effDI = parseFloat(document.getElementById('effDI').value);
 
-            if ([vCell, iDen, area, nCell, pSys_g, tOp, dtStack, dpO2, dpH2].some(isNaN)) {
+            if ([vCell, iDen, area, nCell, pSys_g, tOp, dtStack, dpO2, dpH2, effDI].some(isNaN)) {
                 alert("請確認所有欄位皆已填寫數值！");
                 return;
             }
@@ -454,11 +488,13 @@
             // 換算 L/min (Standard)
             const lminH2 = molH2_s * V_molar * 60;
             const lminO2 = molO2_s * V_molar * 60;
+            
+            // 新增：kWh/Nm3 計算
+            const specificEnergy = (nm3H2 > 0) ? (pSys / nm3H2) : 0;
 
             // 4. 系統產熱 & 陽極流量
             let qGen_kW = (nCell * iSys * (vCell - V_tn)) / 1000;
             if (qGen_kW < 0) qGen_kW = 0; 
-
             const qGen_kcal = qGen_kW * 860;
 
             const mWater_anode_kgs = qGen_kW / (Cp_H2O_L * dtStack);
@@ -506,22 +542,35 @@
 
             const flowChill_O2 = (resO2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
             const flowChill_H2 = (resH2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
+            
+            // 6. 水耗計算 (E Section)
+            // 理論水耗：每產生 1 mol H2 消耗 1 mol H2O
+            const molWater_s = molH2_s; 
+            const waterTheory_gmin = molWater_s * 18.015 * 60;
+            const waterTheory_Lmin = waterTheory_gmin / 1000; // 假設密度 1g/mL
+            const waterTheory_Lhr = waterTheory_Lmin * 60;
+            
+            // 原水消耗 = 理論 / 效率
+            const waterRaw_Lmin = waterTheory_Lmin / (effDI / 100);
+            const waterRaw_Lhr = waterRaw_Lmin * 60;
 
-            // 6. 更新 UI (補上單位顯示)
+            // 7. 更新 UI
             document.getElementById('results').style.display = 'block';
 
-            // A. Overview (ID 在 TD 上)
+            // A. Overview
             document.getElementById('resISys').innerText = iSys.toLocaleString() + " A";
             document.getElementById('resVSys').innerText = vSys.toFixed(1) + " V";
             document.getElementById('resPSys').innerText = pSys.toFixed(2) + " kW";
             document.getElementById('resEff').innerText = effLHV.toFixed(1) + " %";
             
-            // Heat & Anode (ID 在 span 上，單位在 span 外，所以只更新數字)
+            // 新增：單位能耗
+            document.getElementById('resSpecificEnergy').innerText = specificEnergy.toFixed(2) + " kWh/Nm³";
+            
+            // Heat & Anode
             document.getElementById('resHeatKW').innerText = qGen_kW.toFixed(2);
-            document.getElementById('resHeatKcal').innerText = qGen_kcal.toFixed(0);
             document.getElementById('resAnodeFlow').innerText = flowAnode_Lmin.toFixed(1);
 
-            // C. Oxygen (ID 在 TD 上，必須補上單位字串)
+            // C. Oxygen
             document.getElementById('resO2_Nm3').innerText = nm3O2.toFixed(3) + " Nm³/hr";
             document.getElementById('resO2_Lmin').innerText = lminO2.toFixed(1) + " L/min";
             document.getElementById('resO2_Water_g').innerText = resO2.waterIn_gmin.toFixed(1) + " g/min";
@@ -530,12 +579,10 @@
             
             document.getElementById('resO2_HEX_kW').innerText = resO2.duty_kW.toFixed(2) + " kW";
             document.getElementById('resO2_Cond_g').innerText = resO2.condensate_gmin.toFixed(1) + " g/min";
-            
-            // 冰水流量 ID 在 Span 上，單位在外
             document.getElementById('resO2_Chiller_Lmin').innerText = flowChill_O2.toFixed(1);
             document.getElementById('valDtChillO2').innerText = dtChill;
 
-            // D. Hydrogen (ID 在 TD 上，必須補上單位字串)
+            // D. Hydrogen
             document.getElementById('resH2_Nm3').innerText = nm3H2.toFixed(3) + " Nm³/hr";
             document.getElementById('resH2_Lmin').innerText = lminH2.toFixed(1) + " L/min";
             document.getElementById('resH2_Water_g').innerText = resH2.waterIn_gmin.toFixed(1) + " g/min";
@@ -544,10 +591,16 @@
             
             document.getElementById('resH2_HEX_kW').innerText = resH2.duty_kW.toFixed(2) + " kW";
             document.getElementById('resH2_Cond_g').innerText = resH2.condensate_gmin.toFixed(1) + " g/min";
-            
-            // 冰水流量 ID 在 Span 上
             document.getElementById('resH2_Chiller_Lmin').innerText = flowChill_H2.toFixed(1);
             document.getElementById('valDtChillH2').innerText = dtChill;
+            
+            // E. Water Consumption (新增區塊更新)
+            document.getElementById('resWaterTheory_Lmin').innerText = waterTheory_Lmin.toFixed(3) + " L/min";
+            document.getElementById('resWaterTheory_Lhr').innerText = waterTheory_Lhr.toFixed(2) + " L/hr";
+            
+            document.getElementById('resWaterRaw_Lmin').innerText = waterRaw_Lmin.toFixed(3) + " L/min";
+            document.getElementById('resWaterRaw_Lhr').innerText = waterRaw_Lhr.toFixed(2) + " L/hr";
+            document.getElementById('valDiEff').innerText = effDI;
         }
     </script>
 </body>
