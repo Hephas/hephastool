@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上計算工具箱 | My Calculation Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 全域設定 --- */
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- 頁首設計 --- */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* --- 主要內容區 (Grid 佈局) --- */
+        main {
+            flex: 1;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        /* --- 工具卡片設計 --- */
+        .tool-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none; /* 移除連結下底線 */
+            color: var(--text-color);
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+
+        .icon-box {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 20px;
+        }
+
+        .tool-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .tool-card p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn-go {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: auto; /* 將按鈕推到底部 */
+        }
+
+        /* --- 頁尾 --- */
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        /* --- 響應式調整 --- */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .tools-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-calculator"></i> 線上計算工具箱</h1>
+        <p>集合各類實用的線上計算器，提升你的工作效率</p>
+    </header>
+
+    <main>
+        <div class="tools-grid">
+            
+            <a href="#" class="tool-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                </div>
+                <h3>薪資/稅務計算器</h3>
+                <p>輸入您的月薪與獎金，快速試算年度所得稅與實領金額。</p>
+                <span class="btn-go">開始計算</span>
+            </a>
+
+            <a href="#" class="tool-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-weight-scale"></i>
+                </div>
+                <h3>BMI 健康計算器</h3>
+                <p>根據身高體重計算 BMI 指數，並提供健康建議。</p>
+                <span class="btn-go">開始計算</span>
+            </a>
+
+            <a href="#" class="tool-card">
+                <div class="icon-box">
+                    <i class="fa-solid fa-percent"></i>
+                </div>
+                <h3>房貸試算工具</h3>
+                <p>本息平均攤還與本金平均攤還試算，幫助您規劃購屋資金。</p>
+                <span class="btn-go">開始計算</span>
+            </a>
+
+            <div class="tool-card" style="opacity: 0.6; cursor: default;">
+                <div class="icon-box">
+                    <i class="fa-solid fa-hammer"></i>
+                </div>
+                <h3>更多工具開發中...</h3>
+                <p>我們正在持續增加新的計算工具，敬請期待。</p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 計算工具箱 | Designed for GitHub Pages</p>
+    </footer>
+
+</body>
+</html>
