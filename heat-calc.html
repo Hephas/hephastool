@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熱量計算公式 | Heat Calculation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #d35400; /* 使用焦糖橘代表熱能 */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --table-border: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* 表單區塊 */
+        .form-grid {
+            display: grid;
+            gap: 20px;
+            background-color: #fff8f0; /* 暖色調背景 */
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #ffeebb;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: white;
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-calc:hover {
+            background-color: #a04000;
+        }
+
+        /* 結果顯示 */
+        .result-section {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-card {
+            background-color: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .result-header {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .result-body {
+            padding: 20px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #555;
+        }
+
+        .result-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+        
+        .unit {
+            font-size: 0.9rem;
+            color: #888;
+            margin-left: 5px;
+        }
+
+        .highlight-value {
+            color: var(--accent-color);
+            font-size: 1.4rem;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            color: var(--accent-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 3rem; color: #d35400; margin-bottom: 10px;">
+                <i class="fa-solid fa-temperature-arrow-up"></i>
+            </div>
+            <h2>熱量計算公式</h2>
+            <p>Heat Load & Flow Rate Calculator</p>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>1. 預期熱量產出 (Heat Output, kW)</label>
+                <input type="number" id="heatInput" placeholder="例如: 10" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label>2. 熱傳導介質 (Medium)</label>
+                <select id="mediumSelect">
+                    <option value="water">水 (Water)</option>
+                    <option value="air">空氣 (Air)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>3. 熱交換效率 (Efficiency, %)</label>
+                <input type="number" id="efficiency" placeholder="預設: 100" value="100" max="100" min="0" step="1">
+            </div>
+
+            <div class="form-group">
+                <label>4. 預期溫差 (Delta T, °C)</label>
+                <input type="number" id="deltaT" placeholder="例如: 5" step="0.1">
+                <small style="color:#888;">* 進出口溫度差 (例如: 進水30°C, 出水35°C, 溫差=5)</small>
+            </div>
+
+            <button class="btn-calc" onclick="calculateHeat()">開始計算</button>
+        </div>
+
+        <div id="results" class="result-section">
+            
+            <div class="result-card" style="margin-bottom: 20px;">
+                <div class="result-header" style="background-color: #2c3e50;">
+                    <i class="fa-solid fa-fire"></i> 熱量換算
+                </div>
+                <div class="result-body">
+                    <div class="result-row">
+                        <span class="result-label">實際熱交換量</span>
+                        <span>
+                            <span id="resKcal" class="result-value highlight-value">--</span>
+                            <span class="unit">kcal/hr</span>
+                        </span>
+                    </div>
+                    <div style="text-align: right; font-size: 0.85rem; color: #999; margin-top: 5px;">
+                        (基於 <span id="resEffDisplay">100</span>% 效率換算)
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-card">
+                <div class="result-header">
+                    <i class="fa-solid fa-gauge-high"></i> 建議流量需求
+                </div>
+                <div class="result-body">
+                    <div class="result-row">
+                        <span class="result-label">每分鐘公升數</span>
+                        <span>
+                            <span id="resLmin" class="result-value">--</span>
+                            <span class="unit">L/min</span>
+                        </span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">每小時公升數</span>
+                        <span>
+                            <span id="resLhr" class="result-value">--</span>
+                            <span class="unit">L/hr</span>
+                        </span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">每小時立方米</span>
+                        <span>
+                            <span id="resM3hr" class="result-value">--</span>
+                            <span class="unit">M³/hr</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <a href="index.html" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> 回到工具箱首頁
+        </a>
+    </div>
+
+    <script>
+        function calculateHeat() {
+            // 1. 取得輸入
+            const heatKW = parseFloat(document.getElementById('heatInput').value);
+            const medium = document.getElementById('mediumSelect').value;
+            const efficiency = parseFloat(document.getElementById('efficiency').value);
+            const deltaT = parseFloat(document.getElementById('deltaT').value);
+
+            // 驗證輸入
+            if (isNaN(heatKW) || isNaN(efficiency) || isNaN(deltaT)) {
+                alert("請確認所有欄位皆已輸入正確數值！");
+                return;
+            }
+            if (deltaT === 0) {
+                alert("溫差不能為 0！");
+                return;
+            }
+
+            // 2. 基礎熱量換算
+            // 公式: 1 kW = 860 kcal/hr
+            // 實際熱量 = 輸入功率 * 效率 * 860
+            const actualHeat_kcal = heatKW * (efficiency / 100) * 860;
+
+            // 3. 介質參數設定
+            let density = 1; // kg/L
+            let cp = 1;      // kcal/(kg*C)
+
+            if (medium === 'water') {
+                // 水: 密度 1 kg/L, 比熱 1 kcal/kgC
+                density = 1.0;
+                cp = 1.0;
+            } else if (medium === 'air') {
+                // 空氣 (標準狀態): 密度約 1.2 kg/m3 = 0.0012 kg/L
+                // 比熱約 0.24 kcal/kgC
+                density = 0.0012; 
+                cp = 0.24;
+            }
+
+            // 4. 流量計算
+            // Q (kcal/hr) = Flow (L/hr) * Density (kg/L) * Cp (kcal/kgC) * DeltaT
+            // Flow (L/hr) = Q / (Density * Cp * DeltaT)
+            
+            const flow_L_hr = actualHeat_kcal / (density * cp * deltaT);
+            
+            // 換算其他單位
+            const flow_L_min = flow_L_hr / 60;
+            const flow_M3_hr = flow_L_hr / 1000;
+
+            // 5. 顯示結果
+            document.getElementById('results').style.display = 'block';
+            
+            // 熱量
+            document.getElementById('resKcal').innerText = actualHeat_kcal.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('resEffDisplay').innerText = efficiency;
+
+            // 流量 (使用 toLocaleString 加上千分位，並保留小數點)
+            document.getElementById('resLmin').innerText = flow_L_min.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('resLhr').innerText = flow_L_hr.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('resM3hr').innerText = flow_M3_hr.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3});
+        }
+    </script>
+</body>
+</html>
