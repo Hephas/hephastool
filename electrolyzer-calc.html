@@ -373,7 +373,7 @@
                     </tr>
                     <tr>
                         <td>需冰水流量 (Chiller Flow)</td>
-                        <td colspan="3"><span class="highlight" id="resH2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillH2">--</span>°C)</span></td>
+                         <td colspan="3"><span class="highlight" id="resH2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillH2">--</span>°C)</span></td>
                     </tr>
                 </tbody>
             </table>
@@ -398,16 +398,13 @@
 
         // Antoine Equation for Water (P in bar, T in Celsius)
         // P = 10 ^ (A - B / (T + C))
-        // Constants for Water (0-100C)
-        const Ant_A = 5.40221; // Converted for bar (original usually mmHg)
+        const Ant_A = 5.40221; 
         const Ant_B = 1838.675;
         const Ant_C = -31.737; 
         
         // Return Saturation Pressure in bar
         function getSatP(tempC) {
-            // Antoine formula for log10(P_bar) = 5.20389 - 1733.926 / (T + 233.665) -> standard NIST
-            // 使用 NIST 參數 (bar):
-            // log10(P) = A - B / (T + C)
+            // NIST parameters for bar
             const A = 5.20389;
             const B = 1733.926;
             const C = 233.665;
@@ -451,7 +448,7 @@
             const molO2_s = (nCell * iSys) / (4 * F);
 
             // 換算 Nm3/hr (0C, 1atm)
-            const nm3H2 = molH2_s * V_molar * 3600 / 1000; // L/s * 3600 -> L/hr -> m3/hr
+            const nm3H2 = molH2_s * V_molar * 3600 / 1000; 
             const nm3O2 = molO2_s * V_molar * 3600 / 1000;
             
             // 換算 L/min (Standard)
@@ -459,72 +456,43 @@
             const lminO2 = molO2_s * V_molar * 60;
 
             // 4. 系統產熱 & 陽極流量
-            // Q_gen = N * I * (V_cell - V_tn)
-            // 若 V_cell < 1.48 吸熱，若 > 1.48 放熱 (一般電解皆放熱)
             let qGen_kW = (nCell * iSys * (vCell - V_tn)) / 1000;
-            if (qGen_kW < 0) qGen_kW = 0; // 防止計算出負值
+            if (qGen_kW < 0) qGen_kW = 0; 
 
             const qGen_kcal = qGen_kW * 860;
 
-            // 陽極流量 = Q / (Cp * dT)
-            // kW -> kJ/s. Cp=4.18 kJ/kgK.
-            // m (kg/s) = kW / (4.18 * dT)
             const mWater_anode_kgs = qGen_kW / (Cp_H2O_L * dtStack);
-            const flowAnode_Lmin = mWater_anode_kgs * 60; // 假設密度 1kg/L
+            const flowAnode_Lmin = mWater_anode_kgs * 60; 
 
             // 5. 氣體帶水量與熱交換器計算 (Physics)
-            const pAbs_bar = pSys_g + 1.01325; // 絕對壓力 barA
+            const pAbs_bar = pSys_g + 1.01325; 
 
-            // 函式：計算某溫度下的氣體狀態 (焓變與凝結)
             function calcGasCooling(molGas_s, molarMassGas, cpGas, tIn, tTarget) {
-                // A. 入口狀態 (Stack Temp)
                 const pSat_In = getSatP(tIn);
                 
-                // 檢查是否沸騰 (P_sat >= P_sys)
                 if (pSat_In >= pAbs_bar) {
                     alert("警告：操作溫度高於系統壓力的沸點，水將沸騰！計算可能不準確。");
                 }
 
-                // 莫耳分率 y_v = P_sat / P_total
-                // 蒸氣莫耳流率 = 氣體莫耳流率 * (y_v / (1 - y_v))
-                // n_vapor = n_gas * (P_sat / (P_total - P_sat))
                 const nVapor_In = molGas_s * (pSat_In / (pAbs_bar - pSat_In));
-                const massVapor_In_gmin = nVapor_In * 18.015 * 60; // g/min
+                const massVapor_In_gmin = nVapor_In * 18.015 * 60; 
 
-                // B. 出口狀態 (Target Dew Point)
                 const pSat_Out = getSatP(tTarget);
                 const nVapor_Out = molGas_s * (pSat_Out / (pAbs_bar - pSat_Out));
-                // const massVapor_Out_gmin = nVapor_Out * 18.015 * 60;
 
-                // C. 凝結水量
-                const nCond_s = Math.max(0, nVapor_In - nVapor_Out); // mol/s
-                const massCond_gmin = nCond_s * 18.015 * 60; // g/min
+                const nCond_s = Math.max(0, nVapor_In - nVapor_Out); 
+                const massCond_gmin = nCond_s * 18.015 * 60; 
 
-                // D. 熱負荷計算 (kW)
-                // 1. 氣體顯熱: n_gas * Cp_molar * dT (用質量算比較準)
-                const massGas_kgs = molGas_s * (molarMassGas / 1000); // kg/s
+                const massGas_kgs = molGas_s * (molarMassGas / 1000); 
                 const q_gas = massGas_kgs * cpGas * (tIn - tTarget); 
 
-                // 2. 蒸氣顯熱 (簡化：假設全部蒸氣從 Tin 降到 Tout，再凝結部分)
-                // 實際上是變質量冷卻，這裡取平均或保守估算 (全部入口蒸氣降溫)
                 const massVapor_In_kgs = nVapor_In * (18.015 / 1000);
                 const q_vapor_sensible = massVapor_In_kgs * Cp_Vapor * (tIn - tTarget);
 
-                // 3. 潛熱 (凝結熱)
                 const massCond_kgs = nCond_s * (18.015 / 1000);
                 const q_latent = massCond_kgs * Latent_Heat;
 
-                // 總熱負荷 kW
                 const q_total_kW = q_gas + q_vapor_sensible + q_latent;
-
-                // E. 考慮 HEX 效率的設計功率
-                // 設計功率通常指 "需移除的熱量"。效率是指 HEX 實際能交換的能力。
-                // 若效率 90%，代表要交換 Q_total，HEX 的額定能力(UA相關)可能要更大
-                // 但這裡我們計算 "Chiller 需要帶走多少熱 (Duty)" -> 就是 Q_total
-                // 效率可能影響的是 "是否能降到目標溫度"，此處顯示 Q_total 作為 Chiller Load
-                // 為了保守設計，我們將 Load 除以效率? 不，Load 是物理值。
-                // 我們顯示 "熱交換器設計功率" = Q_total (物理需求)
-                // "Chiller 流量" = Q_total / (Cp * dT_chill)
 
                 return {
                     waterIn_gmin: massVapor_In_gmin,
@@ -533,48 +501,51 @@
                 };
             }
 
-            // 計算 O2 側
             const resO2 = calcGasCooling(molO2_s, 32.00, Cp_O2, tOp, dpO2);
-            // 計算 H2 側
             const resH2 = calcGasCooling(molH2_s, 2.016, Cp_H2, tOp, dpH2);
 
-            // 計算 Chiller 流量
             const flowChill_O2 = (resO2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
             const flowChill_H2 = (resH2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
 
-            // 6. 更新 UI
+            // 6. 更新 UI (補上單位顯示)
             document.getElementById('results').style.display = 'block';
 
-            // A. Overview
+            // A. Overview (ID 在 TD 上)
             document.getElementById('resISys').innerText = iSys.toLocaleString() + " A";
             document.getElementById('resVSys').innerText = vSys.toFixed(1) + " V";
             document.getElementById('resPSys').innerText = pSys.toFixed(2) + " kW";
             document.getElementById('resEff').innerText = effLHV.toFixed(1) + " %";
+            
+            // Heat & Anode (ID 在 span 上，單位在 span 外，所以只更新數字)
             document.getElementById('resHeatKW').innerText = qGen_kW.toFixed(2);
             document.getElementById('resHeatKcal').innerText = qGen_kcal.toFixed(0);
-
-            // B. Liquid
             document.getElementById('resAnodeFlow').innerText = flowAnode_Lmin.toFixed(1);
 
-            // C. Oxygen
-            document.getElementById('resO2_Nm3').innerText = nm3O2.toFixed(3);
-            document.getElementById('resO2_Lmin').innerText = lminO2.toFixed(1);
-            document.getElementById('resO2_Water_g').innerText = resO2.waterIn_gmin.toFixed(1);
-            document.getElementById('resO2_Temp').innerText = tOp; // 出口溫度 = Stack Temp
+            // C. Oxygen (ID 在 TD 上，必須補上單位字串)
+            document.getElementById('resO2_Nm3').innerText = nm3O2.toFixed(3) + " Nm³/hr";
+            document.getElementById('resO2_Lmin').innerText = lminO2.toFixed(1) + " L/min";
+            document.getElementById('resO2_Water_g').innerText = resO2.waterIn_gmin.toFixed(1) + " g/min";
+            document.getElementById('resO2_Temp').innerText = tOp + " °C"; 
             document.getElementById('targetO2DP').innerText = dpO2;
-            document.getElementById('resO2_HEX_kW').innerText = resO2.duty_kW.toFixed(2);
-            document.getElementById('resO2_Cond_g').innerText = resO2.condensate_gmin.toFixed(1);
+            
+            document.getElementById('resO2_HEX_kW').innerText = resO2.duty_kW.toFixed(2) + " kW";
+            document.getElementById('resO2_Cond_g').innerText = resO2.condensate_gmin.toFixed(1) + " g/min";
+            
+            // 冰水流量 ID 在 Span 上，單位在外
             document.getElementById('resO2_Chiller_Lmin').innerText = flowChill_O2.toFixed(1);
             document.getElementById('valDtChillO2').innerText = dtChill;
 
-            // D. Hydrogen
-            document.getElementById('resH2_Nm3').innerText = nm3H2.toFixed(3);
-            document.getElementById('resH2_Lmin').innerText = lminH2.toFixed(1);
-            document.getElementById('resH2_Water_g').innerText = resH2.waterIn_gmin.toFixed(1);
-            document.getElementById('resH2_Temp').innerText = tOp;
+            // D. Hydrogen (ID 在 TD 上，必須補上單位字串)
+            document.getElementById('resH2_Nm3').innerText = nm3H2.toFixed(3) + " Nm³/hr";
+            document.getElementById('resH2_Lmin').innerText = lminH2.toFixed(1) + " L/min";
+            document.getElementById('resH2_Water_g').innerText = resH2.waterIn_gmin.toFixed(1) + " g/min";
+            document.getElementById('resH2_Temp').innerText = tOp + " °C";
             document.getElementById('targetH2DP').innerText = dpH2;
-            document.getElementById('resH2_HEX_kW').innerText = resH2.duty_kW.toFixed(2);
-            document.getElementById('resH2_Cond_g').innerText = resH2.condensate_gmin.toFixed(1);
+            
+            document.getElementById('resH2_HEX_kW').innerText = resH2.duty_kW.toFixed(2) + " kW";
+            document.getElementById('resH2_Cond_g').innerText = resH2.condensate_gmin.toFixed(1) + " g/min";
+            
+            // 冰水流量 ID 在 Span 上
             document.getElementById('resH2_Chiller_Lmin').innerText = flowChill_H2.toFixed(1);
             document.getElementById('valDtChillH2').innerText = dtChill;
         }
