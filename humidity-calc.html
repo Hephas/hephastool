@@ -6,7 +6,6 @@
     <title>氣體濕度計算器 | Humidity Calculator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 沿用首頁的設計風格，保持一致性 */
         :root {
             --primary-color: #2c3e50;
             --accent-color: #3498db;
@@ -51,7 +50,6 @@
             font-size: 0.9rem;
         }
 
-        /* 頁籤切換樣式 */
         .tabs {
             display: flex;
             margin-bottom: 25px;
@@ -79,13 +77,12 @@
             background-color: #f9f9f9;
         }
 
-        /* 表單區域 */
         .calc-form {
-            display: none; /* 預設隱藏 */
+            display: none;
         }
 
         .calc-form.active {
-            display: block; /* 啟用時顯示 */
+            display: block;
             animation: fadeIn 0.5s;
         }
 
@@ -106,7 +103,13 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 1rem;
-            box-sizing: border-box; /* 確保 padding 不會撐開寬度 */
+            box-sizing: border-box;
+        }
+        
+        /* 壓力輸入框特別樣式 */
+        .input-pressure {
+            border-left: 4px solid #e67e22 !important;
+            background-color: #fffaf0;
         }
 
         .btn-calc {
@@ -119,31 +122,55 @@
             font-size: 1.1rem;
             cursor: pointer;
             transition: background 0.3s;
+            margin-top: 10px;
         }
 
         .btn-calc:hover {
             background-color: #2980b9;
         }
 
-        /* 結果顯示區 */
         .result-box {
             margin-top: 25px;
             padding: 20px;
             background-color: #e8f6f3;
             border-radius: 8px;
             border-left: 5px solid #1abc9c;
-            display: none; /* 預設隱藏 */
+            display: none;
         }
 
         .result-box h3 {
             margin: 0 0 10px 0;
             color: #16a085;
+            font-size: 1.1rem;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 5px;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
         }
 
         .result-value {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #2c3e50;
+        }
+        
+        .result-label {
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .sub-value {
+            font-size: 1.2rem;
+            color: #e67e22; /* 橘色強調 PPM */
         }
 
         .back-link {
@@ -169,138 +196,12 @@
     <div class="container">
         <div class="header">
             <div style="font-size: 3rem; color: #3498db; margin-bottom: 10px;">
-                <i class="fa-solid fa-droplet"></i>
+                <i class="fa-solid fa-gauge-high"></i>
             </div>
             <h2>氣體濕度計算公式</h2>
-            <p>Humidity & Dew Point Calculator</p>
+            <p>Humidity, Dew Point & PPM Calculator</p>
         </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('mode1')">1. 露點轉濕度</button>
-            <button class="tab-btn" onclick="switchTab('mode2')">2. 濕度轉露點</button>
-        </div>
-
-        <div id="mode1" class="calc-form active">
-            <div class="form-group">
-                <label>氣體溫度 (Air Temperature, °C)</label>
-                <input type="number" id="temp1" placeholder="例如: 25" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>露點溫度 (Dew Point, °C)</label>
-                <input type="number" id="dew1" placeholder="例如: 10" step="0.1">
-            </div>
-            <button class="btn-calc" onclick="calculateRH()">計算相對濕度</button>
-            
-            <div id="result1" class="result-box">
-                <h3>計算結果：相對濕度 (RH)</h3>
-                <div class="result-value" id="resText1">-- %</div>
-            </div>
-        </div>
-
-        <div id="mode2" class="calc-form">
-            <div class="form-group">
-                <label>氣體溫度 (Air Temperature, °C)</label>
-                <input type="number" id="temp2" placeholder="例如: 25" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>相對濕度 (RH, %)</label>
-                <input type="number" id="rh2" placeholder="例如: 50" step="0.1" max="100" min="0">
-            </div>
-            <button class="btn-calc" onclick="calculateDew()">計算露點溫度</button>
-
-            <div id="result2" class="result-box">
-                <h3>計算結果：露點溫度 (Dew Point)</h3>
-                <div class="result-value" id="resText2">-- °C</div>
-            </div>
-        </div>
-
-        <a href="index.html" class="back-link">
-            <i class="fa-solid fa-arrow-left"></i> 回到工具箱首頁
-        </a>
-    </div>
-
-    <script>
-        // 頁籤切換邏輯
-        function switchTab(modeId) {
-            // 隱藏所有表單
-            document.querySelectorAll('.calc-form').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            // 顯示選中的表單
-            document.getElementById(modeId).classList.add('active');
-            
-            // 更新按鈕樣式
-            // 這裡簡單判定：如果是 mode1，第一個按鈕亮；否則第二個亮
-            const buttons = document.querySelectorAll('.tab-btn');
-            if(modeId === 'mode1') {
-                buttons[0].classList.add('active');
-            } else {
-                buttons[1].classList.add('active');
-            }
-
-            // 清除結果區
-            document.getElementById('result1').style.display = 'none';
-            document.getElementById('result2').style.display = 'none';
-        }
-
-        // --- Magnus 公式參數 ---
-        // 適用範圍: -45°C 到 60°C 之間誤差極小
-        const A = 17.625;
-        const B = 243.04;
-
-        // 計算相對濕度 (Mode 1)
-        function calculateRH() {
-            const T = parseFloat(document.getElementById('temp1').value);
-            const Td = parseFloat(document.getElementById('dew1').value);
-
-            if (isNaN(T) || isNaN(Td)) {
-                alert("請輸入正確的溫度數值！");
-                return;
-            }
-
-            // 公式: RH = 100 * (exp((A*Td)/(B+Td)) / exp((A*T)/(B+T)))
-            const alpha = (A * Td) / (B + Td);
-            const beta = (A * T) / (B + T);
-            
-            let RH = 100 * (Math.exp(alpha) / Math.exp(beta));
-            
-            // 修正極端值
-            if (RH > 100) RH = 100;
-            if (RH < 0) RH = 0;
-
-            const resultDiv = document.getElementById('result1');
-            resultDiv.style.display = 'block';
-            document.getElementById('resText1').innerText = RH.toFixed(2) + " %";
-        }
-
-        // 計算露點溫度 (Mode 2)
-        function calculateDew() {
-            const T = parseFloat(document.getElementById('temp2').value);
-            const RH = parseFloat(document.getElementById('rh2').value);
-
-            if (isNaN(T) || isNaN(RH)) {
-                alert("請輸入正確的數值！");
-                return;
-            }
-            
-            if (RH <= 0 || RH > 100) {
-                alert("相對濕度必須在 0 到 100 之間");
-                return;
-            }
-
-            // 公式推導: alpha = ln(RH/100) + (A*T)/(B+T)
-            // Td = (B * alpha) / (A - alpha)
-            
-            const lnRH = Math.log(RH / 100);
-            const beta = (A * T) / (B + T);
-            const alpha = lnRH + beta;
-
-            const Td = (B * alpha) / (A - alpha);
-
-            const resultDiv = document.getElementById('result2');
-            resultDiv.style.display = 'block';
-            document.getElementById('resText2').innerText = Td.toFixed(2) + " °C";
-        }
-    </script>
-</body>
-</html>
+            <button class="tab-btn" onclick="switchTab('mode2')">2.
