@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電解系統計算公式 | Electrolyzer Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #27ae60; /* 綠色代表綠能氫氣 */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --table-border: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* 輸入區塊分組 */
+        .input-section {
+            background-color: #f9fff9;
+            border: 1px solid #e0f2e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .btn-calc {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-calc:hover {
+            background-color: #1e8449;
+        }
+
+        /* 結果表格 */
+        .result-section {
+            margin-top: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .result-table th, .result-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid var(--table-border);
+        }
+
+        .result-table th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: normal;
+        }
+        
+        .result-table tr:nth-child(even) { background-color: #f8f9fa; }
+
+        .sub-header {
+            text-align: left;
+            background-color: #e9f7ef;
+            color: #27ae60;
+            font-weight: bold;
+            padding-left: 15px;
+        }
+
+        .highlight {
+            color: #d35400;
+            font-weight: bold;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .back-link:hover { color: var(--accent-color); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 700px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .result-section { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 3rem; color: #27ae60; margin-bottom: 10px;">
+                <i class="fa-solid fa-atom"></i>
+            </div>
+            <h2>電解系統計算公式</h2>
+            <p>Electrolyzer System Design Calculator</p>
+        </div>
+
+        <div class="input-section">
+            <div class="section-header"><i class="fa-solid fa-layer-group"></i> 電堆核心參數 (Stack Parameters)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>1. 單池電壓 (Cell Voltage, V)</label>
+                    <input type="number" id="cellVoltage" placeholder="例如: 1.9" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>2. 電流密度 (Current Density, mA/cm²)</label>
+                    <input type="number" id="currentDensity" placeholder="例如: 2000" step="10">
+                </div>
+                <div class="form-group">
+                    <label>3. 反應面積 (Active Area, cm²)</label>
+                    <input type="number" id="activeArea" placeholder="例如: 1000" step="1">
+                </div>
+                <div class="form-group">
+                    <label>4. 電堆片數 (Cell Count)</label>
+                    <input type="number" id="cellCount" placeholder="例如: 100" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section" style="border-color: #fff0c0; background-color: #fffdf5;">
+            <div class="section-header" style="color: #f39c12; border-color: #f39c12;">
+                <i class="fa-solid fa-temperature-high"></i> 操作條件 (Operating Conditions)
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>5. 系統壓力 (System Pressure, barg)</label>
+                    <input type="number" id="pressure" placeholder="例如: 10 (若常壓請填0)" value="10" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>6. 操作溫度 (Stack Temp, °C)</label>
+                    <input type="number" id="tempOp" placeholder="例如: 60" value="60" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>7. 電堆進出口溫差 (Stack ΔT, °C)</label>
+                    <input type="number" id="deltaTStack" placeholder="例如: 3" value="3" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>8. 陽極儲罐溫度 (Tank Temp, °C)</label>
+                    <input type="number" id="tempTank" placeholder="參考用，例如: 58" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section" style="border-color: #d6eaf8; background-color: #f4fbff;">
+            <div class="section-header" style="color: #3498db; border-color: #3498db;">
+                <i class="fa-solid fa-snowflake"></i> 冷卻與後處理 (Cooling & HEX)
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>9. 冷凍水入口溫度 (Chiller In, °C)</label>
+                    <input type="number" id="tempChillerIn" placeholder="例如: 7" value="7" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>10. 冷凍水溫差 (Chiller ΔT, °C)</label>
+                    <input type="number" id="deltaTChiller" placeholder="例如: 5" value="5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>11. 氣體換熱器效率 (HEX Eff, %)</label>
+                    <input type="number" id="hexEff" placeholder="例如: 90" value="90" step="1">
+                </div>
+                <div class="form-group" style="visibility: hidden;"></div> <div class="form-group">
+                    <label>12. 氧氣目標露點 (Target O₂ Dew Point, °C)</label>
+                    <input type="number" id="dpO2" placeholder="例如: 40" value="40" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>13. 氫氣目標露點 (Target H₂ Dew Point, °C)</label>
+                    <input type="number" id="dpH2" placeholder="例如: 40" value="40" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-calc" onclick="calculateElectrolyzer()">開始系統計算</button>
+
+        <div id="results" class="result-section">
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="4" style="background-color: #2c3e50; font-size: 1.1rem;">A. 系統總覽 (Overview)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>總電流 (Current)</td>
+                        <td class="highlight" id="resISys">-- A</td>
+                        <td>總電壓 (Voltage)</td>
+                        <td class="highlight" id="resVSys">-- V</td>
+                    </tr>
+                    <tr>
+                        <td>系統總功率 (Power)</td>
+                        <td class="highlight" id="resPSys">-- kW</td>
+                        <td>LHV 效率 (Efficiency)</td>
+                        <td id="resEff">-- %</td>
+                    </tr>
+                    <tr>
+                        <td>電堆產熱 (Heat Gen.)</td>
+                        <td colspan="3"><span id="resHeatKW" class="highlight">--</span> kW / <span id="resHeatKcal" class="highlight">--</span> kcal/hr</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="4" style="background-color: #27ae60; font-size: 1.1rem;">B. 液體循環 (Liquid Loops)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>陽極水循環流量 (Anode Flow)</td>
+                        <td colspan="3"><span id="resAnodeFlow" class="highlight">--</span> L/min <span style="font-size:0.8rem; color:#888;">(用於移除產熱)</span></td>
+                    </tr>
+                    <tr>
+                        <td>陰極液體循環 (Cathode Flow)</td>
+                        <td colspan="3"><span id="resCathodeFlow">0</span> L/min <span style="font-size:0.8rem; color:#888;">(PEM 模式無循環)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="4" style="background-color: #2980b9; font-size: 1.1rem;">C. 陽極氧氣系統 (Anode - Oxygen O₂)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="sub-header"><td colspan="4">1. 產氣與出口狀態 (Outlet State)</td></tr>
+                    <tr>
+                        <td>氣體產量 (Production)</td>
+                        <td id="resO2_Nm3">-- Nm³/hr</td>
+                        <td>體積流量 (Vol Flow)</td>
+                        <td id="resO2_Lmin">-- L/min</td>
+                    </tr>
+                    <tr>
+                        <td>出口含水量 (Water Content)</td>
+                        <td id="resO2_Water_g">-- g/min</td>
+                        <td>氣體溫度 (Temp)</td>
+                        <td id="resO2_Temp">-- °C</td>
+                    </tr>
+
+                    <tr class="sub-header"><td colspan="4">2. 熱交換器設計 (HEX Design) -> 降溫至 <span id="targetO2DP">--</span>°C</td></tr>
+                    <tr>
+                        <td>熱交換設計功率 (HEX Power)</td>
+                        <td class="highlight" id="resO2_HEX_kW">-- kW</td>
+                        <td>凝結水量 (Condensate)</td>
+                        <td id="resO2_Cond_g">-- g/min</td>
+                    </tr>
+                    <tr>
+                        <td>需冰水流量 (Chiller Flow)</td>
+                        <td colspan="3"><span class="highlight" id="resO2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillO2">--</span>°C)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th colspan="4" style="background-color: #e67e22; font-size: 1.1rem;">D. 陰極氫氣系統 (Cathode - Hydrogen H₂)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="sub-header"><td colspan="4">1. 產氣與出口狀態 (Outlet State)</td></tr>
+                    <tr>
+                        <td>氣體產量 (Production)</td>
+                        <td id="resH2_Nm3">-- Nm³/hr</td>
+                        <td>體積流量 (Vol Flow)</td>
+                        <td id="resH2_Lmin">-- L/min</td>
+                    </tr>
+                    <tr>
+                        <td>出口含水量 (Water Content)</td>
+                        <td id="resH2_Water_g">-- g/min</td>
+                        <td>氣體溫度 (Temp)</td>
+                        <td id="resH2_Temp">-- °C</td>
+                    </tr>
+
+                    <tr class="sub-header"><td colspan="4">2. 熱交換器設計 (HEX Design) -> 降溫至 <span id="targetH2DP">--</span>°C</td></tr>
+                    <tr>
+                        <td>熱交換設計功率 (HEX Power)</td>
+                        <td class="highlight" id="resH2_HEX_kW">-- kW</td>
+                        <td>凝結水量 (Condensate)</td>
+                        <td id="resH2_Cond_g">-- g/min</td>
+                    </tr>
+                    <tr>
+                        <td>需冰水流量 (Chiller Flow)</td>
+                        <td colspan="3"><span class="highlight" id="resH2_Chiller_Lmin">--</span> L/min <span style="font-size:0.8rem;">(ΔT=<span id="valDtChillH2">--</span>°C)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <a href="index.html" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> 回到工具箱首頁
+        </a>
+    </div>
+
+    <script>
+        // --- 物理常數 ---
+        const F = 96485.332;       // Faraday constant
+        const V_molar = 22.414;    // STP L/mol
+        const R = 8.314;           // Gas constant
+        const Cp_H2O_L = 4.18;     // kJ/kg.K (Liquid Water)
+        const Cp_H2 = 14.3;        // kJ/kg.K (Hydrogen gas)
+        const Cp_O2 = 0.92;        // kJ/kg.K (Oxygen gas)
+        const Cp_Vapor = 1.86;     // kJ/kg.K (Water Vapor)
+        const Latent_Heat = 2260;  // kJ/kg (Water condensation at 100C approx)
+        const V_tn = 1.48;         // Thermoneutral Voltage (V)
+
+        // Antoine Equation for Water (P in bar, T in Celsius)
+        // P = 10 ^ (A - B / (T + C))
+        // Constants for Water (0-100C)
+        const Ant_A = 5.40221; // Converted for bar (original usually mmHg)
+        const Ant_B = 1838.675;
+        const Ant_C = -31.737; 
+        
+        // Return Saturation Pressure in bar
+        function getSatP(tempC) {
+            // Antoine formula for log10(P_bar) = 5.20389 - 1733.926 / (T + 233.665) -> standard NIST
+            // 使用 NIST 參數 (bar):
+            // log10(P) = A - B / (T + C)
+            const A = 5.20389;
+            const B = 1733.926;
+            const C = 233.665;
+            return Math.pow(10, A - (B / (tempC + C)));
+        }
+
+        function calculateElectrolyzer() {
+            // 1. 讀取輸入
+            const vCell = parseFloat(document.getElementById('cellVoltage').value);
+            const iDen = parseFloat(document.getElementById('currentDensity').value); // mA/cm2
+            const area = parseFloat(document.getElementById('activeArea').value);     // cm2
+            const nCell = parseFloat(document.getElementById('cellCount').value);
+            
+            const pSys_g = parseFloat(document.getElementById('pressure').value);     // barg
+            const tOp = parseFloat(document.getElementById('tempOp').value);
+            const dtStack = parseFloat(document.getElementById('deltaTStack').value);
+            
+            const tChillIn = parseFloat(document.getElementById('tempChillerIn').value);
+            const dtChill = parseFloat(document.getElementById('deltaTChiller').value);
+            const effHex = parseFloat(document.getElementById('hexEff').value) / 100;
+            
+            const dpO2 = parseFloat(document.getElementById('dpO2').value);
+            const dpH2 = parseFloat(document.getElementById('dpH2').value);
+
+            if ([vCell, iDen, area, nCell, pSys_g, tOp, dtStack, dpO2, dpH2].some(isNaN)) {
+                alert("請確認所有欄位皆已填寫數值！");
+                return;
+            }
+
+            // 2. 基礎電氣計算
+            const iSys = (iDen * area) / 1000; // mA -> A
+            const vSys = vCell * nCell;
+            const pSys = (vSys * iSys) / 1000; // kW
+
+            // 效率 (LHV basis: 1.254 V)
+            const effLHV = (1.254 / vCell) * 100;
+
+            // 3. 產氣量 (Mol Rate)
+            // H2: 2e-, O2: 4e-
+            const molH2_s = (nCell * iSys) / (2 * F);
+            const molO2_s = (nCell * iSys) / (4 * F);
+
+            // 換算 Nm3/hr (0C, 1atm)
+            const nm3H2 = molH2_s * V_molar * 3600 / 1000; // L/s * 3600 -> L/hr -> m3/hr
+            const nm3O2 = molO2_s * V_molar * 3600 / 1000;
+            
+            // 換算 L/min (Standard)
+            const lminH2 = molH2_s * V_molar * 60;
+            const lminO2 = molO2_s * V_molar * 60;
+
+            // 4. 系統產熱 & 陽極流量
+            // Q_gen = N * I * (V_cell - V_tn)
+            // 若 V_cell < 1.48 吸熱，若 > 1.48 放熱 (一般電解皆放熱)
+            let qGen_kW = (nCell * iSys * (vCell - V_tn)) / 1000;
+            if (qGen_kW < 0) qGen_kW = 0; // 防止計算出負值
+
+            const qGen_kcal = qGen_kW * 860;
+
+            // 陽極流量 = Q / (Cp * dT)
+            // kW -> kJ/s. Cp=4.18 kJ/kgK.
+            // m (kg/s) = kW / (4.18 * dT)
+            const mWater_anode_kgs = qGen_kW / (Cp_H2O_L * dtStack);
+            const flowAnode_Lmin = mWater_anode_kgs * 60; // 假設密度 1kg/L
+
+            // 5. 氣體帶水量與熱交換器計算 (Physics)
+            const pAbs_bar = pSys_g + 1.01325; // 絕對壓力 barA
+
+            // 函式：計算某溫度下的氣體狀態 (焓變與凝結)
+            function calcGasCooling(molGas_s, molarMassGas, cpGas, tIn, tTarget) {
+                // A. 入口狀態 (Stack Temp)
+                const pSat_In = getSatP(tIn);
+                
+                // 檢查是否沸騰 (P_sat >= P_sys)
+                if (pSat_In >= pAbs_bar) {
+                    alert("警告：操作溫度高於系統壓力的沸點，水將沸騰！計算可能不準確。");
+                }
+
+                // 莫耳分率 y_v = P_sat / P_total
+                // 蒸氣莫耳流率 = 氣體莫耳流率 * (y_v / (1 - y_v))
+                // n_vapor = n_gas * (P_sat / (P_total - P_sat))
+                const nVapor_In = molGas_s * (pSat_In / (pAbs_bar - pSat_In));
+                const massVapor_In_gmin = nVapor_In * 18.015 * 60; // g/min
+
+                // B. 出口狀態 (Target Dew Point)
+                const pSat_Out = getSatP(tTarget);
+                const nVapor_Out = molGas_s * (pSat_Out / (pAbs_bar - pSat_Out));
+                // const massVapor_Out_gmin = nVapor_Out * 18.015 * 60;
+
+                // C. 凝結水量
+                const nCond_s = Math.max(0, nVapor_In - nVapor_Out); // mol/s
+                const massCond_gmin = nCond_s * 18.015 * 60; // g/min
+
+                // D. 熱負荷計算 (kW)
+                // 1. 氣體顯熱: n_gas * Cp_molar * dT (用質量算比較準)
+                const massGas_kgs = molGas_s * (molarMassGas / 1000); // kg/s
+                const q_gas = massGas_kgs * cpGas * (tIn - tTarget); 
+
+                // 2. 蒸氣顯熱 (簡化：假設全部蒸氣從 Tin 降到 Tout，再凝結部分)
+                // 實際上是變質量冷卻，這裡取平均或保守估算 (全部入口蒸氣降溫)
+                const massVapor_In_kgs = nVapor_In * (18.015 / 1000);
+                const q_vapor_sensible = massVapor_In_kgs * Cp_Vapor * (tIn - tTarget);
+
+                // 3. 潛熱 (凝結熱)
+                const massCond_kgs = nCond_s * (18.015 / 1000);
+                const q_latent = massCond_kgs * Latent_Heat;
+
+                // 總熱負荷 kW
+                const q_total_kW = q_gas + q_vapor_sensible + q_latent;
+
+                // E. 考慮 HEX 效率的設計功率
+                // 設計功率通常指 "需移除的熱量"。效率是指 HEX 實際能交換的能力。
+                // 若效率 90%，代表要交換 Q_total，HEX 的額定能力(UA相關)可能要更大
+                // 但這裡我們計算 "Chiller 需要帶走多少熱 (Duty)" -> 就是 Q_total
+                // 效率可能影響的是 "是否能降到目標溫度"，此處顯示 Q_total 作為 Chiller Load
+                // 為了保守設計，我們將 Load 除以效率? 不，Load 是物理值。
+                // 我們顯示 "熱交換器設計功率" = Q_total (物理需求)
+                // "Chiller 流量" = Q_total / (Cp * dT_chill)
+
+                return {
+                    waterIn_gmin: massVapor_In_gmin,
+                    condensate_gmin: massCond_gmin,
+                    duty_kW: q_total_kW,
+                };
+            }
+
+            // 計算 O2 側
+            const resO2 = calcGasCooling(molO2_s, 32.00, Cp_O2, tOp, dpO2);
+            // 計算 H2 側
+            const resH2 = calcGasCooling(molH2_s, 2.016, Cp_H2, tOp, dpH2);
+
+            // 計算 Chiller 流量
+            const flowChill_O2 = (resO2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
+            const flowChill_H2 = (resH2.duty_kW / (Cp_H2O_L * dtChill)) * 60;
+
+            // 6. 更新 UI
+            document.getElementById('results').style.display = 'block';
+
+            // A. Overview
+            document.getElementById('resISys').innerText = iSys.toLocaleString() + " A";
+            document.getElementById('resVSys').innerText = vSys.toFixed(1) + " V";
+            document.getElementById('resPSys').innerText = pSys.toFixed(2) + " kW";
+            document.getElementById('resEff').innerText = effLHV.toFixed(1) + " %";
+            document.getElementById('resHeatKW').innerText = qGen_kW.toFixed(2);
+            document.getElementById('resHeatKcal').innerText = qGen_kcal.toFixed(0);
+
+            // B. Liquid
+            document.getElementById('resAnodeFlow').innerText = flowAnode_Lmin.toFixed(1);
+
+            // C. Oxygen
+            document.getElementById('resO2_Nm3').innerText = nm3O2.toFixed(3);
+            document.getElementById('resO2_Lmin').innerText = lminO2.toFixed(1);
+            document.getElementById('resO2_Water_g').innerText = resO2.waterIn_gmin.toFixed(1);
+            document.getElementById('resO2_Temp').innerText = tOp; // 出口溫度 = Stack Temp
+            document.getElementById('targetO2DP').innerText = dpO2;
+            document.getElementById('resO2_HEX_kW').innerText = resO2.duty_kW.toFixed(2);
+            document.getElementById('resO2_Cond_g').innerText = resO2.condensate_gmin.toFixed(1);
+            document.getElementById('resO2_Chiller_Lmin').innerText = flowChill_O2.toFixed(1);
+            document.getElementById('valDtChillO2').innerText = dtChill;
+
+            // D. Hydrogen
+            document.getElementById('resH2_Nm3').innerText = nm3H2.toFixed(3);
+            document.getElementById('resH2_Lmin').innerText = lminH2.toFixed(1);
+            document.getElementById('resH2_Water_g').innerText = resH2.waterIn_gmin.toFixed(1);
+            document.getElementById('resH2_Temp').innerText = tOp;
+            document.getElementById('targetH2DP').innerText = dpH2;
+            document.getElementById('resH2_HEX_kW').innerText = resH2.duty_kW.toFixed(2);
+            document.getElementById('resH2_Cond_g').innerText = resH2.condensate_gmin.toFixed(1);
+            document.getElementById('resH2_Chiller_Lmin').innerText = flowChill_H2.toFixed(1);
+            document.getElementById('valDtChillH2').innerText = dtChill;
+        }
+    </script>
+</body>
+</html>
