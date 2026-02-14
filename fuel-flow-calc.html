@@ -32,7 +32,7 @@
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            max-width: 800px; /* 加寬以容納表格 */
+            max-width: 900px; /* 加寬以容納新欄位 */
             width: 100%;
         }
 
@@ -51,12 +51,43 @@
             font-size: 0.9rem;
         }
 
+        /* 單位選擇區 */
+        .unit-selector {
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #b6e0fe;
+            text-align: center;
+        }
+
+        .unit-label {
+            font-weight: bold;
+            color: #2980b9;
+            margin-right: 15px;
+        }
+
+        .radio-group {
+            display: inline-block;
+        }
+
+        .radio-group label {
+            margin-right: 15px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+            transform: scale(1.2);
+        }
+
         /* 輸入區塊樣式 */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            background-color: #fffaf0; /* 淡淡的暖色背景區分輸入區 */
+            background-color: #fffaf0;
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #eee;
@@ -77,6 +108,11 @@
             border-radius: 4px;
             font-size: 1rem;
             box-sizing: border-box;
+        }
+        
+        /* 讓 mA 輸入框有些區別 */
+        .input-ma {
+            border-left: 4px solid #e74c3c !important;
         }
 
         .btn-calc {
@@ -101,7 +137,7 @@
         /* 結果表格樣式 */
         .result-section {
             margin-top: 30px;
-            display: none; /* 預設隱藏 */
+            display: none;
             animation: fadeIn 0.5s;
         }
 
@@ -112,26 +148,23 @@
         }
 
         .result-table th, .result-table td {
-            padding: 12px 15px;
+            padding: 10px;
             text-align: center;
             border-bottom: 1px solid var(--table-border);
+            font-size: 0.95rem;
         }
 
         .result-table th {
             background-color: var(--primary-color);
             color: white;
             font-weight: normal;
+            white-space: nowrap; /* 避免標題換行太醜 */
         }
 
         .result-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
 
-        .result-table tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        /* 分組標題 */
         .section-title {
             margin-top: 25px;
             margin-bottom: 10px;
@@ -140,11 +173,6 @@
             border-left: 5px solid var(--accent-color);
             padding-left: 10px;
             font-weight: bold;
-        }
-
-        .unit {
-            font-size: 0.85rem;
-            color: #888;
         }
 
         .back-link {
@@ -164,10 +192,15 @@
             to { opacity: 1; }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 700px) {
             .form-grid { grid-template-columns: 1fr; }
             .btn-calc { grid-column: span 1; }
-            .result-table th, .result-table td { padding: 8px 5px; font-size: 0.9rem; }
+            .result-table th, .result-table td { 
+                padding: 8px 4px; 
+                font-size: 0.85rem; 
+            }
+            /* 手機版讓表格可以橫向捲動，避免跑版 */
+            .result-section { overflow-x: auto; }
         }
     </style>
 </head>
@@ -182,14 +215,26 @@
             <p>Fuel Cell Stack Flow & Power Calculator</p>
         </div>
 
+        <div class="unit-selector">
+            <span class="unit-label"><i class="fa-solid fa-ruler-combined"></i> 請選擇流量顯示單位：</span>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="flowUnit" value="ml" checked onchange="updateTableHeaders()"> ml/min (SCCM)
+                </label>
+                <label>
+                    <input type="radio" name="flowUnit" value="L" onchange="updateTableHeaders()"> L/min (SLPM)
+                </label>
+            </div>
+        </div>
+
         <div class="form-grid">
             <div class="form-group">
                 <label>1. 反應面積 (Active Area, cm²)</label>
-                <input type="number" id="area" placeholder="例如: 300" step="0.1">
+                <input type="number" id="area" placeholder="例如: 25" step="0.1">
             </div>
             <div class="form-group">
-                <label>2. 電流密度 (Current Density, A/cm²)</label>
-                <input type="number" id="currentDensity" placeholder="例如: 1.0" step="0.01">
+                <label>2. 電流密度 (Current Density, <span style="color:#e74c3c">mA/cm²</span>)</label>
+                <input type="number" id="currentDensity" class="input-ma" placeholder="例如: 1000" step="1">
             </div>
             <div class="form-group">
                 <label>3. 預期單電池電壓 (Avg. Cell Voltage, V)</label>
@@ -197,7 +242,7 @@
             </div>
             <div class="form-group">
                 <label>4. 電堆片數 (Number of Cells)</label>
-                <input type="number" id="cellCount" placeholder="例如: 100" step="1">
+                <input type="number" id="cellCount" placeholder="例如: 1" step="1">
             </div>
             <div class="form-group">
                 <label>5. 陽極計量比 (Anode Stoich, H₂)</label>
@@ -224,7 +269,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>操作電流 (Current)</td>
+                        <td>總操作電流 (Total Current)</td>
                         <td id="resCurrent">--</td>
                         <td>A</td>
                     </tr>
@@ -246,19 +291,22 @@
                 <thead>
                     <tr style="background-color: #3498db;">
                         <th>項目</th>
-                        <th>流量 (體積) <br><span style="font-size:0.8rem">L/min (SLPM)</span></th>
-                        <th>流量 (質量) <br><span style="font-size:0.8rem">g/min</span></th>
+                        <th class="th-flow-unit">流量 (ml/min)</th>
+                        <th>流量 (Nm³/hr)</th>
+                        <th>流量 (g/min)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>單片電池 (Single Cell)</td>
-                        <td id="resH2_Cell_L">--</td>
+                        <td>單片 (Cell)</td>
+                        <td id="resH2_Cell_Vol">--</td>
+                        <td id="resH2_Cell_Nm3">--</td>
                         <td id="resH2_Cell_g">--</td>
                     </tr>
                     <tr>
-                        <td>電堆總和 (Stack Total)</td>
-                        <td id="resH2_Stack_L" style="font-weight:bold;">--</td>
+                        <td>電堆 (Stack)</td>
+                        <td id="resH2_Stack_Vol" style="font-weight:bold;">--</td>
+                        <td id="resH2_Stack_Nm3" style="font-weight:bold;">--</td>
                         <td id="resH2_Stack_g" style="font-weight:bold;">--</td>
                     </tr>
                 </tbody>
@@ -269,19 +317,22 @@
                 <thead>
                     <tr style="background-color: #27ae60;">
                         <th>項目</th>
-                        <th>流量 (體積) <br><span style="font-size:0.8rem">L/min (SLPM)</span></th>
-                        <th>流量 (質量) <br><span style="font-size:0.8rem">g/min</span></th>
+                        <th class="th-flow-unit">流量 (ml/min)</th>
+                        <th>流量 (Nm³/hr)</th>
+                        <th>流量 (g/min)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>單片電池 (Single Cell)</td>
-                        <td id="resAir_Cell_L">--</td>
+                        <td>單片 (Cell)</td>
+                        <td id="resAir_Cell_Vol">--</td>
+                        <td id="resAir_Cell_Nm3">--</td>
                         <td id="resAir_Cell_g">--</td>
                     </tr>
                     <tr>
-                        <td>電堆總和 (Stack Total)</td>
-                        <td id="resAir_Stack_L" style="font-weight:bold;">--</td>
+                        <td>電堆 (Stack)</td>
+                        <td id="resAir_Stack_Vol" style="font-weight:bold;">--</td>
+                        <td id="resAir_Stack_Nm3" style="font-weight:bold;">--</td>
                         <td id="resAir_Stack_g" style="font-weight:bold;">--</td>
                     </tr>
                 </tbody>
@@ -292,19 +343,22 @@
                 <thead>
                     <tr style="background-color: #8e44ad;">
                         <th>項目</th>
-                        <th>流量 (體積) <br><span style="font-size:0.8rem">L/min (SLPM)</span></th>
-                        <th>流量 (質量) <br><span style="font-size:0.8rem">g/min</span></th>
+                        <th class="th-flow-unit">流量 (ml/min)</th>
+                        <th>流量 (Nm³/hr)</th>
+                        <th>流量 (g/min)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>單片電池 (Single Cell)</td>
-                        <td id="resO2_Cell_L">--</td>
+                        <td>單片 (Cell)</td>
+                        <td id="resO2_Cell_Vol">--</td>
+                        <td id="resO2_Cell_Nm3">--</td>
                         <td id="resO2_Cell_g">--</td>
                     </tr>
                     <tr>
-                        <td>電堆總和 (Stack Total)</td>
-                        <td id="resO2_Stack_L" style="font-weight:bold;">--</td>
+                        <td>電堆 (Stack)</td>
+                        <td id="resO2_Stack_Vol" style="font-weight:bold;">--</td>
+                        <td id="resO2_Stack_Nm3" style="font-weight:bold;">--</td>
                         <td id="resO2_Stack_g" style="font-weight:bold;">--</td>
                     </tr>
                 </tbody>
@@ -319,92 +373,104 @@
 
     <script>
         // 常數定義
-        const F = 96485.332;       // 法拉第常數 (s·A/mol)
-        const V_molar = 22.414;    // 氣體莫耳體積 (L/mol, at STP 0°C, 1atm)
-        const M_H2 = 2.016;        // 氫氣莫耳質量 (g/mol)
-        const M_O2 = 32.00;        // 氧氣莫耳質量 (g/mol)
-        const M_Air = 28.97;       // 空氣平均莫耳質量 (g/mol)
-        const O2_pct = 0.21;       // 空氣中氧氣佔比 (21%)
+        const F = 96485.332;       // 法拉第常數
+        const V_molar = 22.414;    // SLPM 標準 (0°C, 1atm)
+        const M_H2 = 2.016;
+        const M_O2 = 32.00;
+        const M_Air = 28.97;
+        const O2_pct = 0.21;
+
+        // 當使用者切換單位時，更新表格標題
+        function updateTableHeaders() {
+            const unitType = document.querySelector('input[name="flowUnit"]:checked').value;
+            const headers = document.querySelectorAll('.th-flow-unit');
+            
+            headers.forEach(th => {
+                if (unitType === 'ml') {
+                    th.innerHTML = '流量 <br><span style="font-size:0.8rem">(ml/min, SCCM)</span>';
+                } else {
+                    th.innerHTML = '流量 <br><span style="font-size:0.8rem">(L/min, SLPM)</span>';
+                }
+            });
+
+            // 如果已經計算過，切換單位時自動重新計算
+            const results = document.getElementById('results');
+            if (results.style.display === 'block') {
+                calculateFuel();
+            }
+        }
 
         function calculateFuel() {
             // 1. 獲取輸入值
             const area = parseFloat(document.getElementById('area').value);
-            const currentDensity = parseFloat(document.getElementById('currentDensity').value);
+            const currentDensity_mA = parseFloat(document.getElementById('currentDensity').value); // 單位 mA
             const voltage = parseFloat(document.getElementById('voltage').value);
             const cells = parseFloat(document.getElementById('cellCount').value);
             const stoichH2 = parseFloat(document.getElementById('stoichH2').value);
             const stoichAir = parseFloat(document.getElementById('stoichAir').value);
+            
+            // 獲取單位選擇
+            const unitType = document.querySelector('input[name="flowUnit"]:checked').value;
 
-            if ([area, currentDensity, voltage, cells, stoichH2, stoichAir].some(isNaN)) {
+            if ([area, currentDensity_mA, voltage, cells, stoichH2, stoichAir].some(isNaN)) {
                 alert("請確認所有欄位皆已輸入數值！");
                 return;
             }
 
-            // 2. 基礎電氣計算
-            const totalCurrent = area * currentDensity; // A
-            const cellPower = totalCurrent * voltage;   // W
-            const stackPower = cellPower * cells / 1000; // kW
+            // 2. 轉換電流密度 mA -> A
+            const currentDensity_A = currentDensity_mA / 1000;
 
-            // 3. 流量計算核心函式 (計算單電池流量)
-            // 回傳物件包含 { mol_rate, L_min, g_min }
+            // 3. 基礎電氣計算
+            const totalCurrent = area * currentDensity_A; // A
+            const cellPower = totalCurrent * voltage;     // W
+            const stackPower = cellPower * cells / 1000;  // kW
+
+            // 4. 流量計算核心函式
+            // 統一先算出 SLPM (L/min)，再轉成其他單位
             function calcFlow(current, n_electron, stoich, molar_mass) {
-                // 莫耳流率 (mol/s) = I / (n * F) * Stoich
                 const mol_per_sec = (current / (n_electron * F)) * stoich;
                 
-                // 體積流量 (L/min) = mol/s * 60 * 22.414
+                // 基礎 SLPM (L/min)
                 const l_min = mol_per_sec * 60 * V_molar;
                 
-                // 質量流量 (g/min) = mol/s * 60 * M
+                // 質量流量 (g/min)
                 const g_min = mol_per_sec * 60 * molar_mass;
+
+                // 顯示用的體積流量 (根據選擇 ml 或 L)
+                let display_vol = 0;
+                if (unitType === 'ml') {
+                    display_vol = l_min * 1000; // L -> ml
+                } else {
+                    display_vol = l_min;
+                }
+
+                // 計算 Nm3/hr (1 L/min = 0.06 m3/hr)
+                const nm3_hr = l_min * 0.06;
                 
-                return { l_min, g_min, mol_per_sec };
+                return { display_vol, nm3_hr, g_min, mol_per_sec, l_min_raw: l_min };
             }
 
             // --- 氫氣 (n=2) ---
             const h2_single = calcFlow(totalCurrent, 2, stoichH2, M_H2);
             
-            // --- 氧氣 (n=4) --- 
-            // 注意：這是 "需求氧氣量" (含 stoich)
+            // --- 氧氣 (n=4) ---
             const o2_single = calcFlow(totalCurrent, 4, stoichAir, M_O2);
 
-            // --- 空氣 (基於氧氣推算) ---
-            // 空氣體積 = 氧氣體積 / 0.21
-            const air_L_min = o2_single.l_min / O2_pct;
+            // --- 空氣 ---
+            // 空氣的 L/min 直接用 O2_L_min / 0.21
+            const air_l_min_raw = o2_single.l_min_raw / O2_pct;
             
-            // 空氣質量 = 空氣莫耳數 * 空氣分子量
-            // 空氣莫耳數 = 氧氣莫耳數 / 0.21
+            // 轉換顯示單位
+            let air_display_vol = (unitType === 'ml') ? (air_l_min_raw * 1000) : air_l_min_raw;
+            
+            // 轉換 Nm3/hr
+            const air_nm3_hr = air_l_min_raw * 0.06;
+
+            // 計算空氣質量 (需用空氣莫耳數)
             const air_mol_per_sec = o2_single.mol_per_sec / O2_pct;
             const air_g_min = air_mol_per_sec * 60 * M_Air;
 
 
-            // 4. 更新顯示 (共用 formatter)
-            const fmt = (num) => num.toFixed(3);
-
-            document.getElementById('results').style.display = 'block';
-            
-            // Power
-            document.getElementById('resCurrent').innerText = totalCurrent.toFixed(1);
-            document.getElementById('resCellPower').innerText = cellPower.toFixed(2);
-            document.getElementById('resStackPower').innerText = stackPower.toFixed(2);
-
-            // H2
-            document.getElementById('resH2_Cell_L').innerText = fmt(h2_single.l_min);
-            document.getElementById('resH2_Cell_g').innerText = fmt(h2_single.g_min);
-            document.getElementById('resH2_Stack_L').innerText = fmt(h2_single.l_min * cells);
-            document.getElementById('resH2_Stack_g').innerText = fmt(h2_single.g_min * cells);
-
-            // Air
-            document.getElementById('resAir_Cell_L').innerText = fmt(air_L_min);
-            document.getElementById('resAir_Cell_g').innerText = fmt(air_g_min);
-            document.getElementById('resAir_Stack_L').innerText = fmt(air_L_min * cells);
-            document.getElementById('resAir_Stack_g').innerText = fmt(air_g_min * cells);
-
-            // O2
-            document.getElementById('resO2_Cell_L').innerText = fmt(o2_single.l_min);
-            document.getElementById('resO2_Cell_g').innerText = fmt(o2_single.g_min);
-            document.getElementById('resO2_Stack_L').innerText = fmt(o2_single.l_min * cells);
-            document.getElementById('resO2_Stack_g').innerText = fmt(o2_single.g_min * cells);
-        }
-    </script>
-</body>
-</html>
+            // 5. 更新顯示 (Formatter)
+            const fmt = (num) => num.toFixed(3); // 流量小數點三位
+            const fmtNm3 = (num) => num.toExponential(3); // Nm3 如果太小可以用科學記號，
