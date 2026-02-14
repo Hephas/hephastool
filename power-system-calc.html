@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>發電系統投資評估 | Power System Investment Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #f1c40f; /* 金黃色代表商業/金錢 */
+            --green-color: #27ae60;  /* 綠色代表 ESG */
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Microsoft JhengHei, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 { margin: 0; color: var(--primary-color); }
+        .header p { color: #666; font-size: 0.9rem; }
+
+        /* 輸入區塊樣式 */
+        .input-section {
+            background-color: #fffcf5; /* 淡淡的金黃色背景 */
+            border: 1px solid #fae588;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: #d4ac0d;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #d4ac0d;
+            padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            margin-top: 30px;
+        }
+        .form-checkbox input { width: auto; margin-right: 10px; transform: scale(1.2); }
+
+        .btn-calc {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-color);
+            color: #2c3e50;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .btn-calc:hover { background-color: #d4ac0d; }
+
+        /* 報表顯示區 */
+        .report-section {
+            display: none;
+            margin-top: 30px;
+            animation: fadeIn 0.5s;
+        }
+
+        .report-header {
+            text-align: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .report-body {
+            border: 1px solid var(--border-color);
+            border-top: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .kpi-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .kpi-label { font-size: 0.9rem; color: #666; margin-top: 5px; }
+
+        .cost-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .cost-table th, .cost-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .cost-table th { background-color: #f1f1f1; color: #333; }
+        .total-row { font-weight: bold; background-color: #fffcf5; color: #d4ac0d; }
+
+        .esg-box {
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .risk-note {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            color: #c0392b;
+            font-size: 0.9rem;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--accent-color); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .report-section { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 3rem; color: #f1c40f; margin-bottom: 10px;">
+                <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <h2>燃料電池發電系統投資評估</h2>
+            <p>Fuel Cell Power System Investment ROI & LCOE Analysis</p>
+        </div>
+
+        <div class="input-section">
+            <div class="section-title"><i class="fa-solid fa-server"></i> 1. 系統規模與設置成本 (CAPEX)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>系統規模 (kW)</label>
+                    <input type="number" id="scale" placeholder="例如: 1000" step="1">
+                </div>
+                <div class="form-group">
+                    <label>設置成本 (NTD/kW)</label>
+                    <input type="number" id="costInstall" placeholder="例如: 150000" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>政府設備補助 (NTD/kW)</label>
+                    <input type="number" id="subInstall" placeholder="例如: 30000" value="0" step="1000">
+                </div>
+                <div class="form-group">
+                    <label>硬體攤提年限 (Years)</label>
+                    <input type="number" id="yearsAmort" placeholder="例如: 10" value="10" step="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="section-title"><i class="fa-solid fa-gears"></i> 2. 營運參數 (Operation & Efficiency)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>年運轉時數 (Hours/Year)</label>
+                    <input type="number" id="opHours" placeholder="例如: 8000" value="8000" step="100">
+                </div>
+                <div class="form-group">
+                    <label>發電效率 (Elec Efficiency, %)</label>
+                    <input type="number" id="effElec" placeholder="例如: 50" value="50" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>熱回收效率 (Thermal Eff, %)</label>
+                    <input type="number" id="effThermal" placeholder="例如: 40" value="40" step="0.1">
+                </div>
+                <div class="form-checkbox">
+                    <label><input type="checkbox" id="checkCHP" checked> 啟用熱電聯產 (CHP) 計算</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <div class="section-title"><i class="fa-solid fa-gas-pump"></i> 3. 燃料與維護 (OPEX)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>燃料單價 (NTD/m³)</label>
+                    <input type="number" id="costFuel" placeholder="例如: 15" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>燃料補助 (NTD/m³)</label>
+                    <input type="number" id="subFuel" placeholder="例如: 2" value="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>燃料熱值 (LHV, kWh/m³)</label>
+                    <input type="number" id="heatValue" placeholder="預設(NG): 9.9" value="9.9" step="0.1">
+                </div>
+                <div class="form-group"></div> <div class="form-group">
+                    <label>維護費用 (NTD/kW/8000hr)</label>
+                    <input type="number" id="costMaint" placeholder="例如: 2000" step="100">
+                </div>
+                <div class="form-group">
+                    <label>軟體授權費 (NTD/kW/Year)</label>
+                    <input type="number" id="costLicense" placeholder="例如: 1000" step="100">
+                </div>
+                <div class="form-group">
+                    <label>系統衰退率 (%/8000hr)</label>
+                    <input type="number" id="degradation" placeholder="例如: 1.5" value="1.5" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-section" style="background-color: #f0fdf4; border-color: #bbf7d0;">
+            <div class="section-title" style="color: #27ae60; border-color: #27ae60;">
+                <i class="fa-solid fa-leaf"></i> 4. ESG 環境效益參數
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>系統排碳量 (kgCO2/hr)</label>
+                    <input type="number" id="emitSystem" placeholder="例如: 450" step="1">
+                </div>
+                <div class="form-group">
+                    <label>市電排碳係數 (kgCO2/kWh)</label>
+                    <input type="number" id="emitGrid" placeholder="預設(TW): 0.495" value="0.495" step="0.001">
+                </div>
+                <div class="form-group">
+                    <label>碳費/碳權價格 (NTD/ton)</label>
+                    <input type="number" id="costCarbon" placeholder="例如: 300" value="300" step="10">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-calc" onclick="calculateROI()">產生評估報告</button>
+
+        <div id="report" class="report-section">
+            <div class="report-header">
+                <i class="fa-solid fa-file-invoice-dollar"></i> 年度營運評估報告
+            </div>
+            <div class="report-body">
+                
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="resTotalCap">--</div>
+                        <div class="kpi-label">實際總投入成本 (Net CAPEX)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="resAnnualGen">--</div>
+                        <div class="kpi-label">年發電量 (kWh)</div>
+                    </div>
+                    <div class="kpi-card" style="border-left-color: #27ae60;">
+                        <div class="kpi-value" style="color: #27ae60;" id="resCarbonRed">--</div>
+                        <div class="kpi-label">年減碳量 (Tons CO2e)</div>
+                    </div>
+                </div>
+
+                <h3 style="color:#2c3e50; border-bottom: 2px solid #eee; padding-bottom:10px;">
+                    <i class="fa-solid fa-magnifying-glass-dollar"></i> 電力成本分析 (LCOE Analysis)
+                </h3>
+                <table class="cost-table">
+                    <thead>
+                        <tr>
+                            <th>成本項目 (Cost Item)</th>
+                            <th>年度總費用 (NTD/yr)</th>
+                            <th>每度電成本 (NTD/kWh)</th>
+                            <th>佔比 (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1. 燃料費用 (Fuel Net Cost)</td>
+                            <td id="tabFuelTotal">--</td>
+                            <td id="tabFuelUnit">--</td>
+                            <td id="tabFuelPct">--</td>
+                        </tr>
+                        <tr>
+                            <td>2. 維護保養 (Maintenance)</td>
+                            <td id="tabMaintTotal">--</td>
+                            <td id="tabMaintUnit">--</td>
+                            <td id="tabMaintPct">--</td>
+                        </tr>
+                        <tr>
+                            <td>3. 軟體授權 (License Fee)</td>
+                            <td id="tabLicTotal">--</td>
+                            <td id="tabLicUnit">--</td>
+                            <td id="tabLicPct">--</td>
+                        </tr>
+                        <tr>
+                            <td>4. 設備攤提 (Amortization)</td>
+                            <td id="tabAmortTotal">--</td>
+                            <td id="tabAmortUnit">--</td>
+                            <td id="tabAmortPct">--</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>綜合發電成本 (LCOE)</td>
+                            <td id="tabTotalCost">--</td>
+                            <td id="tabLCOE" style="font-size: 1.2rem;">--</td>
+                            <td>100%</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="esg-box">
+                    <h3 style="color:#27ae60; margin-top:0;">
+                        <i class="fa-solid fa-tree"></i> ESG 環境效益與淨成本分析
+                    </h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: space-around;">
+                        <div>
+                            <strong>電力替代減碳：</strong> <span id="resElecRed">--</span> Tons
+                        </div>
+                        <div id="thermalRedBlock">
+                            <strong>熱能替代減碳：</strong> <span id="resThermalRed">--</span> Tons <br>
+                            <span style="font-size:0.8rem; color:#666;">(對比天然氣鍋爐)</span>
+                        </div>
+                        <div>
+                            <strong>碳資產價值：</strong> <span id="resCarbonValue" style="font-weight:bold; color:#27ae60;">--</span> NTD/yr
+                        </div>
+                    </div>
+                    <hr style="border: 0; border-top: 1px dashed #c8e6c9; margin: 15px 0;">
+                    <div style="text-align: center; font-size: 1.1rem;">
+                        扣除碳效益後之淨電力成本 (Effective LCOE): <br>
+                        <span id="resNetLCOE" style="font-size: 1.8rem; font-weight: bold; color: #27ae60;">--</span> NTD/kWh
+                    </div>
+                </div>
+
+                <div class="risk-note">
+                    <strong><i class="fa-solid fa-triangle-exclamation"></i> 營運與風險備註：</strong>
+                    <ul style="margin: 5px 0 0 20px;">
+                        <li>本報告基於首年運轉數據計算。</li>
+                        <li>年燃料消耗量預估為：<span id="resFuelCons">--</span> m³。</li>
+                        <li>若啟用熱電聯產，年產熱能預估為：<span id="resThermalGen">--</span> kWh_th。</li>
+                        <li>考量系統衰退率 (<span id="valDeg">--</span>%/8khr)，預估 8000 小時後發電能力將降至 <span id="resDegPower">--</span> kW。</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <a href="index.html" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> 回到工具箱首頁
+        </a>
+    </div>
+
+    <script>
+        // 天然氣鍋爐排放係數 (kgCO2e/kWh_thermal) - 假設效率 90%
+        const NG_BOILER_EMISSION = 0.202; 
+
+        function calculateROI() {
+            // 1. 讀取輸入
+            const scale = parseFloat(document.getElementById('scale').value);
+            const costInstall = parseFloat(document.getElementById('costInstall').value);
+            const subInstall = parseFloat(document.getElementById('subInstall').value);
+            const yearsAmort = parseFloat(document.getElementById('yearsAmort').value);
+            
+            const opHours = parseFloat(document.getElementById('opHours').value);
+            const effElec = parseFloat(document.getElementById('effElec').value) / 100;
+            const effThermal = parseFloat(document.getElementById('effThermal').value) / 100;
+            const isCHP = document.getElementById('checkCHP').checked;
+            
+            const costFuel = parseFloat(document.getElementById('costFuel').value);
+            const subFuel = parseFloat(document.getElementById('subFuel').value);
+            const heatValue = parseFloat(document.getElementById('heatValue').value); // kWh/m3
+            
+            const costMaint = parseFloat(document.getElementById('costMaint').value); // /kW/8000hr
+            const costLicense = parseFloat(document.getElementById('costLicense').value); // /kW/yr
+            const degradation = parseFloat(document.getElementById('degradation').value);
+            
+            const emitSystem = parseFloat(document.getElementById('emitSystem').value); // kg/hr
+            const emitGrid = parseFloat(document.getElementById('emitGrid').value); // kg/kWh
+            const costCarbon = parseFloat(document.getElementById('costCarbon').value); // NTD/ton
+
+            // 驗證必填
+            if ([scale, costInstall, opHours, effElec, costFuel, heatValue, emitSystem].some(isNaN)) {
+                alert("請確認主要欄位皆已填寫數值！");
+                return;
+            }
+
+            // 2. 核心計算
+            // A. CAPEX
+            const netCapexUnit = costInstall - subInstall;
+            const totalCapex = scale * netCapexUnit;
+            const annualAmort = totalCapex / yearsAmort;
+
+            // B. Operation
+            const annualGenElec = scale * opHours; // kWh
+            // 燃料計算: 輸入能量 = 輸出電能 / 電效率
+            const inputEnergy = annualGenElec / effElec; // kWh
+            const fuelCons = inputEnergy / heatValue; // m3
+            
+            // 熱能計算 (若 CHP)
+            let annualGenThermal = 0;
+            if (isCHP) {
+                // 熱能 = 輸入能量 * 熱效率
+                annualGenThermal = inputEnergy * effThermal; 
+            }
+
+            // C. OPEX (Annual)
+            // 燃料費
+            const annualFuelCost = fuelCons * (costFuel - subFuel);
+            
+            // 維護費 (依照運轉時數比例)
+            // 輸入是 per 8000hr
+            const maintRatio = opHours / 8000;
+            const annualMaintCost = (scale * costMaint) * maintRatio;
+            
+            // 授權費 (固定年費)
+            const annualLicenseCost = scale * costLicense;
+
+            const totalAnnualCost = annualFuelCost + annualMaintCost + annualLicenseCost + annualAmort;
+            const lcoe = totalAnnualCost / annualGenElec;
+
+            // D. ESG & Carbon
+            // 電力減碳 = (市電排放 * 發電量) - (系統排放 * 時數)
+            const carbonRedElec_kg = (emitGrid * annualGenElec) - (emitSystem * opHours);
+            
+            // 熱能減碳 (替代天然氣鍋爐)
+            let carbonRedThermal_kg = 0;
+            if (isCHP) {
+                carbonRedThermal_kg = annualGenThermal * NG_BOILER_EMISSION;
+            }
+
+            const totalCarbonRed_ton = (carbonRedElec_kg + carbonRedThermal_kg) / 1000;
+            const carbonValue = totalCarbonRed_ton * costCarbon;
+
+            // E. Net LCOE
+            // 淨成本 = 總成本 - 碳收益
+            const netAnnualCost = totalAnnualCost - carbonValue;
+            const netLCOE = netAnnualCost / annualGenElec;
+
+            // F. Risk
+            const degScale = scale * (1 - (degradation / 100));
+
+            // 3. 渲染報表
+            const fmt = (n) => n.toLocaleString('en-US', {maximumFractionDigits: 0});
+            const fmt2 = (n) => n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            document.getElementById('report').style.display = 'block';
+
+            // KPI
+            document.getElementById('resTotalCap').innerText = fmt(totalCapex);
+            document.getElementById('resAnnualGen').innerText = fmt(annualGenElec);
+            document.getElementById('resCarbonRed').innerText = fmt2(totalCarbonRed_ton);
+
+            // Cost Table
+            const updateRow = (idPrefix, val) => {
+                document.getElementById(idPrefix + 'Total').innerText = fmt(val);
+                document.getElementById(idPrefix + 'Unit').innerText = fmt2(val / annualGenElec);
+                document.getElementById(idPrefix + 'Pct').innerText = ((val / totalAnnualCost) * 100).toFixed(1) + '%';
+            };
+
+            updateRow('tabFuel', annualFuelCost);
+            updateRow('tabMaint', annualMaintCost);
+            updateRow('tabLic', annualLicenseCost);
+            updateRow('tabAmort', annualAmort);
+
+            document.getElementById('tabTotalCost').innerText = fmt(totalAnnualCost);
+            document.getElementById('tabLCOE').innerText = fmt2(lcoe);
+
+            // ESG
+            document.getElementById('resElecRed').innerText = fmt2(carbonRedElec_kg / 1000);
+            
+            if (isCHP) {
+                document.getElementById('thermalRedBlock').style.display = 'block';
+                document.getElementById('resThermalRed').innerText = fmt2(carbonRedThermal_kg / 1000);
+            } else {
+                document.getElementById('thermalRedBlock').style.display = 'none';
+            }
+            
+            document.getElementById('resCarbonValue').innerText = fmt(carbonValue);
+            document.getElementById('resNetLCOE').innerText = fmt2(netLCOE);
+
+            // Risk Note
+            document.getElementById('resFuelCons').innerText = fmt(fuelCons);
+            document.getElementById('resThermalGen').innerText = isCHP ? fmt(annualGenThermal) : "0 (未啟用)";
+            document.getElementById('valDeg').innerText = degradation;
+            document.getElementById('resDegPower').innerText = degScale.toFixed(1);
+        }
+    </script>
+</body>
+</html>
